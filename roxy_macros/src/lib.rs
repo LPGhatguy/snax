@@ -197,7 +197,7 @@ fn emit_tag(tag: &HtmlTag) -> TokenStream {
     let attribute_insertions: TokenStream = tag.attributes
         .iter()
         .map(|(key, value)| quote!(
-            __rsx_attributes.insert(stringify!(#key), #value.into());
+            __roxy_attributes.insert(stringify!(#key), #value.into());
         ))
         .collect();
 
@@ -207,7 +207,7 @@ fn emit_tag(tag: &HtmlTag) -> TokenStream {
             let emitted = emit_content(child);
 
             quote!(
-                __rsx_children.push(#emitted.into());
+                __roxy_children.push(#emitted.into());
             )
         })
         .collect();
@@ -216,16 +216,16 @@ fn emit_tag(tag: &HtmlTag) -> TokenStream {
 
     quote!(
         {
-            let mut __rsx_attributes = ::std::collections::HashMap::new();
+            let mut __roxy_attributes = ::std::collections::HashMap::new();
             #attribute_insertions
 
-            let mut __rsx_children = ::std::vec::Vec::new();
+            let mut __roxy_children = ::std::vec::Vec::new();
             #child_insertions
 
-            rsx::HtmlTag {
+            roxy::HtmlTag {
                 name: std::borrow::Cow::Borrowed(stringify!(#tag_name)),
-                attributes: __rsx_attributes,
-                children: __rsx_children,
+                attributes: __roxy_attributes,
+                children: __roxy_children,
             }
         }
     )

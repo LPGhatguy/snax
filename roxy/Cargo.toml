@@ -1,13 +1,9 @@
 [package]
-name = "rsx_macros"
+name = "roxy"
 version = "0.1.0"
 authors = ["Lucien Greathouse <me@lpghatguy.com>"]
 edition = "2018"
 
-[lib]
-proc-macro = true
-
 [dependencies]
 proc-macro-hack = "0.5"
-proc-macro2 = "0.4"
-quote = "0.6.11"
+roxy_macros = { path = "../roxy_macros" }

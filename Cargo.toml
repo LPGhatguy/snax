@@ -1,5 +1,5 @@
 [workspace]
 members = [
-	"rsx",
-	"rsx_macros",
+	"roxy",
+	"roxy_macros",
 ]

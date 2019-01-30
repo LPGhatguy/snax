@@ -6,7 +6,7 @@ use std::{
 use proc_macro_hack::proc_macro_hack;
 
 #[proc_macro_hack]
-pub use rsx_macros::snax;
+pub use roxy_macros::snax;
 
 #[derive(Debug, PartialEq)]
 pub struct HtmlTag {
@@ -45,7 +45,7 @@ mod test {
         HtmlContent,
     };
 
-    use crate as rsx;
+    use crate as roxy;
 
     #[test]
     fn empty() {
