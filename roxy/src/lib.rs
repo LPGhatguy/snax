@@ -1,6 +1,7 @@
 use std::{
     collections::HashMap,
     borrow::Cow,
+    fmt,
 };
 
 use proc_macro_hack::proc_macro_hack;
@@ -15,10 +16,47 @@ pub struct HtmlTag {
     pub children: Vec<HtmlContent>,
 }
 
+impl fmt::Display for HtmlTag {
+    fn fmt(&self, output: &mut fmt::Formatter) -> fmt::Result {
+        // TODO: Write attributes
+        write!(output, "<{}>", self.name)?;
+
+        for child in &self.children {
+            write!(output, "{}", child)?;
+        }
+
+        write!(output, "</{}>", self.name)
+    }
+}
+
+#[derive(Debug, PartialEq)]
+pub struct HtmlSelfClosingTag {
+    pub name: Cow<'static, str>,
+    pub attributes: HashMap<Cow<'static, str>, Cow<'static, str>>,
+}
+
+impl fmt::Display for HtmlSelfClosingTag {
+    fn fmt(&self, output: &mut fmt::Formatter) -> fmt::Result {
+        // TODO: Write attributes
+        write!(output, "<{} />", self.name)
+    }
+}
+
 #[derive(Debug, PartialEq)]
 pub enum HtmlContent {
     Tag(HtmlTag),
+    SelfClosingTag(HtmlSelfClosingTag),
     Text(Cow<'static, str>),
+}
+
+impl fmt::Display for HtmlContent {
+    fn fmt(&self, output: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            HtmlContent::Tag(tag) => write!(output, "{}", tag),
+            HtmlContent::SelfClosingTag(tag) => write!(output, "{}", tag),
+            HtmlContent::Text(text) => write!(output, "{}", htmlescape::encode_minimal(text)),
+        }
+    }
 }
 
 impl From<HtmlTag> for HtmlContent {
@@ -27,9 +65,15 @@ impl From<HtmlTag> for HtmlContent {
     }
 }
 
-impl<T> From<T> for HtmlContent where T: std::fmt::Display {
+impl From<HtmlSelfClosingTag> for HtmlContent {
+    fn from(tag: HtmlSelfClosingTag) -> HtmlContent {
+        HtmlContent::SelfClosingTag(tag)
+    }
+}
+
+impl<T> From<T> for HtmlContent where T: Into<Cow<'static, str>> {
     fn from(displayable: T) -> HtmlContent {
-        HtmlContent::Text(Cow::Owned(format!("{}", displayable)))
+        HtmlContent::Text(displayable.into())
     }
 }
 
@@ -42,6 +86,7 @@ mod test {
 
     use crate::{
         HtmlTag,
+        HtmlSelfClosingTag,
         HtmlContent,
     };
 
@@ -62,10 +107,9 @@ mod test {
     fn empty_self_closing() {
         let tag = snax!(<div />);
 
-        assert_eq!(tag, HtmlTag {
+        assert_eq!(tag, HtmlSelfClosingTag {
             name: Cow::Borrowed("div"),
             attributes: HashMap::new(),
-            children: Vec::new(),
         });
     }
 
@@ -90,7 +134,7 @@ mod test {
     fn literal_block() {
         let tag = snax!(
             <span>
-                { 5 + 5 }
+                { format!("{}", 5 + 5) }
             </span>
         );
 
@@ -137,10 +181,9 @@ mod test {
             name: Cow::Borrowed("div"),
             attributes: HashMap::new(),
             children: vec![
-                HtmlContent::Tag(HtmlTag {
+                HtmlContent::SelfClosingTag(HtmlSelfClosingTag {
                     name: Cow::Borrowed("span"),
                     attributes: HashMap::new(),
-                    children: Vec::new(),
                 }),
             ],
         });

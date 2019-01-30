@@ -41,6 +41,7 @@ macro_rules! yum {
 #[derive(Debug)]
 enum HtmlContent {
     Tag(HtmlTag),
+    SelfClosingTag(HtmlSelfClosingTag),
     Textish(TokenTree),
 }
 
@@ -49,6 +50,12 @@ struct HtmlTag {
     name: Ident,
     attributes: Vec<(Ident, TokenTree)>,
     children: Vec<HtmlContent>,
+}
+
+#[derive(Debug)]
+struct HtmlSelfClosingTag {
+    name: Ident,
+    attributes: Vec<(Ident, TokenTree)>,
 }
 
 #[derive(Debug)]
@@ -61,31 +68,31 @@ enum TagError {
 
 #[derive(Debug)]
 enum HtmlToken {
-    OpenTag(HtmlOpenTag),
-    CloseTag(HtmlCloseTag),
-    SelfClosingTag(HtmlSelfClosingTag),
-    Textish(HtmlTextish),
+    OpenTag(HtmlOpenToken),
+    CloseTag(HtmlCloseToken),
+    SelfClosingTag(HtmlSelfClosingToken),
+    Textish(HtmlTextishToken),
 }
 
 #[derive(Debug)]
-struct HtmlOpenTag {
+struct HtmlOpenToken {
     name: Ident,
     attributes: Vec<(Ident, TokenTree)>,
 }
 
 #[derive(Debug)]
-struct HtmlCloseTag {
+struct HtmlCloseToken {
     name: Ident,
 }
 
 #[derive(Debug)]
-struct HtmlSelfClosingTag {
+struct HtmlSelfClosingToken {
     name: Ident,
     attributes: Vec<(Ident, TokenTree)>,
 }
 
 #[derive(Debug)]
-struct HtmlTextish {
+struct HtmlTextishToken {
     content: TokenTree,
 }
 
@@ -99,7 +106,7 @@ fn assert_is_end(mut input: impl Iterator<Item = TokenTree>) {
 }
 
 fn parse_root(mut input: impl Iterator<Item = TokenTree>) -> Result<HtmlContent, TagError> {
-    let mut tag_stack: Vec<HtmlOpenTag> = Vec::new();
+    let mut tag_stack: Vec<HtmlOpenToken> = Vec::new();
     let mut children: Vec<HtmlContent> = Vec::new();
 
     loop {
@@ -127,17 +134,16 @@ fn parse_root(mut input: impl Iterator<Item = TokenTree>) -> Result<HtmlContent,
                 }
             },
             HtmlToken::SelfClosingTag(self_closing_tag) => {
-                let tag = HtmlTag {
+                let tag = HtmlSelfClosingTag {
                     name: self_closing_tag.name,
                     attributes: self_closing_tag.attributes,
-                    children: Vec::new(),
                 };
 
                 if tag_stack.is_empty() {
                     assert_is_end(&mut input);
-                    return Ok(HtmlContent::Tag(tag))
+                    return Ok(HtmlContent::SelfClosingTag(tag))
                 } else {
-                    children.push(HtmlContent::Tag(tag));
+                    children.push(HtmlContent::SelfClosingTag(tag));
                 }
             },
             HtmlToken::Textish(textish) => {
@@ -160,7 +166,7 @@ fn parse_html_token(mut input: impl Iterator<Item = TokenTree>) -> Result<HtmlTo
                     let name = yum!(input, TokenTree::Ident(ident) => ident);
                     yum!(input, TokenTree::Punct(ref punct) if punct.as_char() == '>');
 
-                    Ok(HtmlToken::CloseTag(HtmlCloseTag {
+                    Ok(HtmlToken::CloseTag(HtmlCloseToken {
                         name,
                     }))
                 },
@@ -172,7 +178,7 @@ fn parse_html_token(mut input: impl Iterator<Item = TokenTree>) -> Result<HtmlTo
                         TokenTree::Punct(ref punct) if punct.as_char() == '>' => {
                             // Opening tag
 
-                            Ok(HtmlToken::OpenTag(HtmlOpenTag {
+                            Ok(HtmlToken::OpenTag(HtmlOpenToken {
                                 name,
                                 attributes,
                             }))
@@ -182,7 +188,7 @@ fn parse_html_token(mut input: impl Iterator<Item = TokenTree>) -> Result<HtmlTo
 
                             yum!(input, TokenTree::Punct(ref punct) if punct.as_char() == '>');
 
-                            Ok(HtmlToken::SelfClosingTag(HtmlSelfClosingTag {
+                            Ok(HtmlToken::SelfClosingTag(HtmlSelfClosingToken {
                                 name,
                                 attributes,
                             }))
@@ -193,8 +199,8 @@ fn parse_html_token(mut input: impl Iterator<Item = TokenTree>) -> Result<HtmlTo
                 unexpected => return Err(TagError::UnexpectedToken(unexpected)),
             }
         },
-        content @ TokenTree::Literal(_) => Ok(HtmlToken::Textish(HtmlTextish { content })),
-        content @ TokenTree::Group(_) => Ok(HtmlToken::Textish(HtmlTextish { content })),
+        content @ TokenTree::Literal(_) => Ok(HtmlToken::Textish(HtmlTextishToken { content })),
+        content @ TokenTree::Group(_) => Ok(HtmlToken::Textish(HtmlTextishToken { content })),
         unexpected => return Err(TagError::UnexpectedToken(unexpected)),
     }
 }
@@ -202,8 +208,32 @@ fn parse_html_token(mut input: impl Iterator<Item = TokenTree>) -> Result<HtmlTo
 fn emit_content(content: &HtmlContent) -> TokenStream {
     match content {
         HtmlContent::Tag(tag) => emit_tag(tag),
+        HtmlContent::SelfClosingTag(tag) => emit_self_closing_tag(tag),
         HtmlContent::Textish(tt) => emit_textish(tt),
     }
+}
+
+fn emit_self_closing_tag(tag: &HtmlSelfClosingTag) -> TokenStream {
+    let attribute_insertions: TokenStream = tag.attributes
+        .iter()
+        .map(|(key, value)| quote!(
+            __roxy_attributes.insert(stringify!(#key), #value.into());
+        ))
+        .collect();
+
+    let tag_name = &tag.name;
+
+    quote!(
+        {
+            let mut __roxy_attributes = ::std::collections::HashMap::new();
+            #attribute_insertions
+
+            roxy::HtmlSelfClosingTag {
+                name: std::borrow::Cow::Borrowed(stringify!(#tag_name)),
+                attributes: __roxy_attributes,
+            }
+        }
+    )
 }
 
 fn emit_tag(tag: &HtmlTag) -> TokenStream {

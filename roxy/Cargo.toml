@@ -7,3 +7,4 @@ edition = "2018"
 [dependencies]
 proc-macro-hack = "0.5"
 roxy_macros = { path = "../roxy_macros" }
+htmlescape = "0.3.1"
