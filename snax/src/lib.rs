@@ -98,60 +98,60 @@ mod test {
     fn empty() {
         let tag = snax!(<div></div>);
 
-        assert_eq!(tag, HtmlTag {
+        assert_eq!(tag, HtmlContent::Tag(HtmlTag {
             name: Cow::Borrowed("div"),
             attributes: HashMap::new(),
             children: Vec::new(),
-        });
+        }));
     }
 
     #[test]
     fn self_closing() {
         let tag = snax!(<div />);
 
-        assert_eq!(tag, HtmlSelfClosingTag {
+        assert_eq!(tag, HtmlContent::SelfClosingTag(HtmlSelfClosingTag {
             name: Cow::Borrowed("div"),
             attributes: HashMap::new(),
-        });
+        }));
     }
 
     #[test]
     fn empty_with_attributes() {
         let tag = snax!(<div foo="bar" baz="qux"></div>);
 
-        assert_eq!(tag, HtmlTag {
+        assert_eq!(tag, HtmlContent::Tag(HtmlTag {
             name: Cow::Borrowed("div"),
             attributes: hashmap!(
                 Cow::Borrowed("foo") => Cow::Borrowed("bar"),
                 Cow::Borrowed("baz") => Cow::Borrowed("qux"),
             ),
             children: Vec::new(),
-        });
+        }));
     }
 
     #[test]
     fn empty_with_block_attribute() {
         let tag = snax!(<div foo={ (5 + 5).to_string() }></div>);
 
-        assert_eq!(tag, HtmlTag {
+        assert_eq!(tag, HtmlContent::Tag(HtmlTag {
             name: Cow::Borrowed("div"),
             attributes: hashmap!(
                 Cow::Borrowed("foo") => Cow::Borrowed("10"),
             ),
             children: Vec::new(),
-        });
+        }));
     }
 
     #[test]
     fn self_closing_with_attribute() {
         let tag = snax!(<div foo="hello" />);
 
-        assert_eq!(tag, HtmlSelfClosingTag {
+        assert_eq!(tag, HtmlContent::SelfClosingTag(HtmlSelfClosingTag {
             name: Cow::Borrowed("div"),
             attributes: hashmap!(
                 Cow::Borrowed("foo") => Cow::Borrowed("hello"),
             ),
-        });
+        }));
     }
 
     #[test]
@@ -162,13 +162,13 @@ mod test {
             </span>
         );
 
-        assert_eq!(tag, HtmlTag {
+        assert_eq!(tag, HtmlContent::Tag(HtmlTag {
             name: Cow::Borrowed("span"),
             attributes: HashMap::new(),
             children: vec![
                 HtmlContent::Text(Cow::Borrowed("Hello, world!")),
             ],
-        });
+        }));
     }
 
     #[test]
@@ -179,13 +179,13 @@ mod test {
             </span>
         );
 
-        assert_eq!(tag, HtmlTag {
+        assert_eq!(tag, HtmlContent::Tag(HtmlTag {
             name: Cow::Borrowed("span"),
             attributes: HashMap::new(),
             children: vec![
                 HtmlContent::Text(Cow::Borrowed("10")),
             ],
-        });
+        }));
     }
 
     #[test]
@@ -197,7 +197,7 @@ mod test {
             </div>
         );
 
-        assert_eq!(tag, HtmlTag {
+        assert_eq!(tag, HtmlContent::Tag(HtmlTag {
             name: Cow::Borrowed("div"),
             attributes: HashMap::new(),
             children: vec![
@@ -207,7 +207,7 @@ mod test {
                     children: Vec::new(),
                 }),
             ],
-        });
+        }));
     }
 
     #[test]
@@ -218,7 +218,7 @@ mod test {
             </div>
         );
 
-        assert_eq!(tag, HtmlTag {
+        assert_eq!(tag, HtmlContent::Tag(HtmlTag {
             name: Cow::Borrowed("div"),
             attributes: HashMap::new(),
             children: vec![
@@ -227,6 +227,6 @@ mod test {
                     attributes: HashMap::new(),
                 }),
             ],
-        });
+        }));
     }
 }

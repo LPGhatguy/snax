@@ -80,7 +80,7 @@ struct HtmlOpenToken {
     attributes: Vec<(Ident, TokenTree)>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct HtmlCloseToken {
     name: Ident,
 }
@@ -116,7 +116,7 @@ fn parse_root(mut input: impl Iterator<Item = TokenTree>) -> Result<HtmlContent,
             },
             HtmlToken::CloseTag(closing_tag) => {
                 let opening_tag = tag_stack.pop()
-                    .expect("Unexpected closing tag with no matching opening tag");
+                    .ok_or_else(|| TagError::UnexpectedHtmlToken(HtmlToken::CloseTag(closing_tag.clone())))?;
 
                 assert_eq!(opening_tag.name, closing_tag.name);
 
@@ -238,10 +238,10 @@ fn emit_self_closing_tag(tag: &HtmlSelfClosingTag) -> TokenStream {
             let mut __snax_attributes = ::std::collections::HashMap::new();
             #attribute_insertions
 
-            snax::HtmlSelfClosingTag {
+            snax::HtmlContent::SelfClosingTag(snax::HtmlSelfClosingTag {
                 name: ::std::borrow::Cow::Borrowed(stringify!(#tag_name)),
                 attributes: __snax_attributes,
-            }
+            })
         }
     )
 }
@@ -275,11 +275,11 @@ fn emit_tag(tag: &HtmlTag) -> TokenStream {
             let mut __snax_children = ::std::vec::Vec::new();
             #child_insertions
 
-            snax::HtmlTag {
+            snax::HtmlContent::Tag(snax::HtmlTag {
                 name: ::std::borrow::Cow::Borrowed(stringify!(#tag_name)),
                 attributes: __snax_attributes,
                 children: __snax_children,
-            }
+            })
         }
     )
 }
