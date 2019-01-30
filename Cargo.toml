@@ -1,0 +1,5 @@
+[workspace]
+members = [
+	"rsx",
+	"rsx_macros",
+]
