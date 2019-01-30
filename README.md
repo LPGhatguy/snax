@@ -19,7 +19,7 @@ Templates should just be Rust code. This is the philosophy behind JSX and React 
 Not quite fully functional, but this is the goal:
 
 ```rust
-use snax::{snax, HtmlContent};
+use snax::{snax, Fragmment, HtmlContent};
 
 fn main() {
 	println!("{}", render_page());
@@ -32,7 +32,7 @@ fn render_page() -> HtmlContent {
 				<title>"Hello, Snax!"</title>
 			</head>
 			<body>
-				{ [35, 23, 0].map(render_age) }
+				{ Fragment::from([35, 23, 0].map(render_age)) }
 			</body>
 		</html>
 	)

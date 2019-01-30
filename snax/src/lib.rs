@@ -1,6 +1,7 @@
 use std::{
     collections::HashMap,
     borrow::Cow,
+    iter::FromIterator,
     fmt,
 };
 
@@ -14,6 +15,14 @@ pub struct HtmlTag {
     pub name: Cow<'static, str>,
     pub attributes: HashMap<Cow<'static, str>, Cow<'static, str>>,
     pub children: Vec<HtmlContent>,
+}
+
+impl HtmlTag {
+    pub fn add_child<T: Into<HtmlContent>>(&mut self, child: T) {
+        for item in child.into() {
+            self.children.push(item.into());
+        }
+    }
 }
 
 impl fmt::Display for HtmlTag {
@@ -43,10 +52,112 @@ impl fmt::Display for HtmlSelfClosingTag {
 }
 
 #[derive(Debug, PartialEq)]
+pub struct Fragment {
+    children: Vec<HtmlContent>,
+}
+
+impl Fragment {
+    pub fn new<T>(iter: T) -> Fragment
+        where T: IntoIterator,
+              T::Item: Into<HtmlContent>,
+    {
+        Fragment {
+            children: iter.into_iter().map(Into::into).collect(),
+        }
+    }
+}
+
+impl FromIterator<HtmlContent> for Fragment {
+    fn from_iter<I: IntoIterator<Item = HtmlContent>>(iter: I) -> Fragment {
+        Fragment {
+            children: iter.into_iter().collect(),
+        }
+    }
+}
+
+impl IntoIterator for Fragment {
+    type Item = HtmlContent;
+    type IntoIter = std::vec::IntoIter<Self::Item>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.children.into_iter()
+    }
+}
+
+impl fmt::Display for Fragment {
+    fn fmt(&self, output: &mut fmt::Formatter) -> fmt::Result {
+        for child in &self.children {
+            write!(output, "{}", child)?;
+        }
+
+        Ok(())
+    }
+}
+
+#[derive(Debug, PartialEq)]
+pub struct EscapedText {
+    text: Cow<'static, str>,
+}
+
+impl fmt::Display for EscapedText {
+    fn fmt(&self, output: &mut fmt::Formatter) -> fmt::Result {
+        write!(output, "{}", htmlescape::encode_minimal(&self.text))
+    }
+}
+
+#[derive(Debug, PartialEq)]
+pub struct UnescapedText {
+    text: Cow<'static, str>,
+}
+
+impl fmt::Display for UnescapedText {
+    fn fmt(&self, output: &mut fmt::Formatter) -> fmt::Result {
+        write!(output, "{}", self.text)
+    }
+}
+
+#[derive(Debug, PartialEq)]
 pub enum HtmlContent {
     Tag(HtmlTag),
     SelfClosingTag(HtmlSelfClosingTag),
-    Text(Cow<'static, str>),
+    EscapedText(EscapedText),
+    UnescapedText(UnescapedText),
+    Fragment(Fragment),
+}
+
+pub enum HtmlContentIntoIter {
+    Once(std::iter::Once<HtmlContent>),
+    Children(std::vec::IntoIter<HtmlContent>),
+}
+
+impl Iterator for HtmlContentIntoIter {
+    type Item = HtmlContent;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        match self {
+            HtmlContentIntoIter::Once(inner) => inner.next(),
+            HtmlContentIntoIter::Children(inner) => inner.next(),
+        }
+    }
+}
+
+impl IntoIterator for HtmlContent {
+    type Item = HtmlContent;
+    type IntoIter = HtmlContentIntoIter;
+
+    fn into_iter(self) -> Self::IntoIter {
+        match self {
+            HtmlContent::Tag(_) |
+            HtmlContent::SelfClosingTag(_) |
+            HtmlContent::EscapedText(_) |
+            HtmlContent::UnescapedText(_) => {
+                HtmlContentIntoIter::Once(std::iter::once(self))
+            },
+            HtmlContent::Fragment(Fragment { children }) => {
+                HtmlContentIntoIter::Children(children.into_iter())
+            },
+        }
+    }
 }
 
 impl fmt::Display for HtmlContent {
@@ -54,7 +165,9 @@ impl fmt::Display for HtmlContent {
         match self {
             HtmlContent::Tag(tag) => write!(output, "{}", tag),
             HtmlContent::SelfClosingTag(tag) => write!(output, "{}", tag),
-            HtmlContent::Text(text) => write!(output, "{}", htmlescape::encode_minimal(text)),
+            HtmlContent::EscapedText(text) => write!(output, "{}", text),
+            HtmlContent::UnescapedText(text) => write!(output, "{}", text),
+            HtmlContent::Fragment(fragment) => write!(output, "{}", fragment),
         }
     }
 }
@@ -71,9 +184,39 @@ impl From<HtmlSelfClosingTag> for HtmlContent {
     }
 }
 
-impl<T> From<T> for HtmlContent where T: Into<Cow<'static, str>> {
-    fn from(displayable: T) -> HtmlContent {
-        HtmlContent::Text(displayable.into())
+impl From<Fragment> for HtmlContent {
+    fn from(tag: Fragment) -> HtmlContent {
+        HtmlContent::Fragment(tag)
+    }
+}
+
+impl From<UnescapedText> for HtmlContent {
+    fn from(tag: UnescapedText) -> HtmlContent {
+        HtmlContent::UnescapedText(tag)
+    }
+}
+
+impl From<&'static str> for HtmlContent {
+    fn from(value: &'static str) -> HtmlContent {
+        HtmlContent::EscapedText(EscapedText {
+            text: value.into(),
+        })
+    }
+}
+
+impl From<String> for HtmlContent {
+    fn from(value: String) -> HtmlContent {
+        HtmlContent::EscapedText(EscapedText {
+            text: value.into(),
+        })
+    }
+}
+
+impl From<Cow<'static, str>> for HtmlContent {
+    fn from(value: Cow<'static, str>) -> HtmlContent {
+        HtmlContent::EscapedText(EscapedText {
+            text: value,
+        })
     }
 }
 
@@ -90,6 +233,7 @@ mod test {
         HtmlTag,
         HtmlSelfClosingTag,
         HtmlContent,
+        Fragment,
     };
 
     use crate as snax;
@@ -166,7 +310,7 @@ mod test {
             name: Cow::Borrowed("span"),
             attributes: HashMap::new(),
             children: vec![
-                HtmlContent::Text(Cow::Borrowed("Hello, world!")),
+                "Hello, world!".into(),
             ],
         }));
     }
@@ -183,7 +327,25 @@ mod test {
             name: Cow::Borrowed("span"),
             attributes: HashMap::new(),
             children: vec![
-                HtmlContent::Text(Cow::Borrowed("10")),
+                "10".into(),
+            ],
+        }));
+    }
+
+    #[test]
+    fn literal_block_fragment() {
+        let tag = snax!(
+            <span>
+                { Fragment::new(["hello", "world"].iter().cloned()) }
+            </span>
+        );
+
+        assert_eq!(tag, HtmlContent::Tag(HtmlTag {
+            name: Cow::Borrowed("span"),
+            attributes: HashMap::new(),
+            children: vec![
+                "hello".into(),
+                "world".into(),
             ],
         }));
     }

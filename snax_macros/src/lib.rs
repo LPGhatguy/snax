@@ -260,7 +260,7 @@ fn emit_tag(tag: &HtmlTag) -> TokenStream {
             let emitted = emit_content(child);
 
             quote!(
-                __snax_children.push(#emitted.into());
+                __snax_tag.add_child(#emitted);
             )
         })
         .collect();
@@ -272,14 +272,15 @@ fn emit_tag(tag: &HtmlTag) -> TokenStream {
             let mut __snax_attributes = ::std::collections::HashMap::new();
             #attribute_insertions
 
-            let mut __snax_children = ::std::vec::Vec::new();
-            #child_insertions
-
-            snax::HtmlContent::Tag(snax::HtmlTag {
+            let mut __snax_tag = snax::HtmlTag {
                 name: ::std::borrow::Cow::Borrowed(stringify!(#tag_name)),
                 attributes: __snax_attributes,
-                children: __snax_children,
-            })
+                children: ::std::vec::Vec::new(),
+            };
+
+            #child_insertions
+
+            snax::HtmlContent::Tag(__snax_tag)
         }
     )
 }
