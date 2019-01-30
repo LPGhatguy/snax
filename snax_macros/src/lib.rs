@@ -217,7 +217,7 @@ fn emit_self_closing_tag(tag: &HtmlSelfClosingTag) -> TokenStream {
     let attribute_insertions: TokenStream = tag.attributes
         .iter()
         .map(|(key, value)| quote!(
-            __roxy_attributes.insert(stringify!(#key), #value.into());
+            __snax_attributes.insert(stringify!(#key), #value.into());
         ))
         .collect();
 
@@ -225,12 +225,12 @@ fn emit_self_closing_tag(tag: &HtmlSelfClosingTag) -> TokenStream {
 
     quote!(
         {
-            let mut __roxy_attributes = ::std::collections::HashMap::new();
+            let mut __snax_attributes = ::std::collections::HashMap::new();
             #attribute_insertions
 
-            roxy::HtmlSelfClosingTag {
+            snax::HtmlSelfClosingTag {
                 name: std::borrow::Cow::Borrowed(stringify!(#tag_name)),
-                attributes: __roxy_attributes,
+                attributes: __snax_attributes,
             }
         }
     )
@@ -240,7 +240,7 @@ fn emit_tag(tag: &HtmlTag) -> TokenStream {
     let attribute_insertions: TokenStream = tag.attributes
         .iter()
         .map(|(key, value)| quote!(
-            __roxy_attributes.insert(stringify!(#key), #value.into());
+            __snax_attributes.insert(stringify!(#key), #value.into());
         ))
         .collect();
 
@@ -250,7 +250,7 @@ fn emit_tag(tag: &HtmlTag) -> TokenStream {
             let emitted = emit_content(child);
 
             quote!(
-                __roxy_children.push(#emitted.into());
+                __snax_children.push(#emitted.into());
             )
         })
         .collect();
@@ -259,16 +259,16 @@ fn emit_tag(tag: &HtmlTag) -> TokenStream {
 
     quote!(
         {
-            let mut __roxy_attributes = ::std::collections::HashMap::new();
+            let mut __snax_attributes = ::std::collections::HashMap::new();
             #attribute_insertions
 
-            let mut __roxy_children = ::std::vec::Vec::new();
+            let mut __snax_children = ::std::vec::Vec::new();
             #child_insertions
 
-            roxy::HtmlTag {
+            snax::HtmlTag {
                 name: std::borrow::Cow::Borrowed(stringify!(#tag_name)),
-                attributes: __roxy_attributes,
-                children: __roxy_children,
+                attributes: __snax_attributes,
+                children: __snax_children,
             }
         }
     )

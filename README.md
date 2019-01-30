@@ -1,4 +1,4 @@
-# Roxy: JSX-ish for Rust
+# Snax: JSX-ish for Rust
 **Super super early WIP**
 
 Templates should just be Rust code. This is the philosophy behind JSX and React and I think it's great.

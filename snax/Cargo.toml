@@ -1,10 +1,10 @@
 [package]
-name = "roxy"
+name = "snax"
 version = "0.1.0"
 authors = ["Lucien Greathouse <me@lpghatguy.com>"]
 edition = "2018"
 
 [dependencies]
 proc-macro-hack = "0.5"
-roxy_macros = { path = "../roxy_macros" }
+snax_macros = { path = "../snax_macros" }
 htmlescape = "0.3.1"
