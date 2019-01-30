@@ -89,6 +89,15 @@ struct HtmlTextish {
     content: TokenTree,
 }
 
+fn assert_is_end(mut input: impl Iterator<Item = TokenTree>) {
+    match input.next() {
+        None => {},
+        Some(token) => {
+            panic!("Expected end of Roxy macro, got {}", token);
+        },
+    }
+}
+
 fn parse_root(mut input: impl Iterator<Item = TokenTree>) -> Result<HtmlContent, TagError> {
     let mut tag_stack: Vec<HtmlOpenTag> = Vec::new();
     let mut children: Vec<HtmlContent> = Vec::new();
@@ -111,7 +120,7 @@ fn parse_root(mut input: impl Iterator<Item = TokenTree>) -> Result<HtmlContent,
                 };
 
                 if tag_stack.is_empty() {
-                    // TODO: Assert that this is the end?
+                    assert_is_end(&mut input);
                     return Ok(HtmlContent::Tag(tag))
                 } else {
                     children.push(HtmlContent::Tag(tag));
@@ -125,7 +134,7 @@ fn parse_root(mut input: impl Iterator<Item = TokenTree>) -> Result<HtmlContent,
                 };
 
                 if tag_stack.is_empty() {
-                    // TODO: Assert that this is the end?
+                    assert_is_end(&mut input);
                     return Ok(HtmlContent::Tag(tag))
                 } else {
                     children.push(HtmlContent::Tag(tag));
@@ -133,7 +142,7 @@ fn parse_root(mut input: impl Iterator<Item = TokenTree>) -> Result<HtmlContent,
             },
             HtmlToken::Textish(textish) => {
                 if tag_stack.is_empty() {
-                    // TODO: Assert that this is the end?
+                    assert_is_end(&mut input);
                     return Ok(HtmlContent::Textish(textish.content));
                 } else {
                     children.push(HtmlContent::Textish(textish.content));
@@ -141,17 +150,6 @@ fn parse_root(mut input: impl Iterator<Item = TokenTree>) -> Result<HtmlContent,
             },
         }
     }
-
-    // let (name, attributes) = match parse_html_token(input)? {
-    //     HtmlToken::OpenTag { name, attributes } => (name, attributes),
-    //     unexpected => return Err(TagError::UnexpectedHtmlToken(unexpected)),
-    // };
-
-    // Ok(HtmlTag {
-    //     name,
-    //     attributes: Vec::new(),
-    //     children: Vec::new(),
-    // })
 }
 
 fn parse_html_token(mut input: impl Iterator<Item = TokenTree>) -> Result<HtmlToken, TagError> {
@@ -170,12 +168,27 @@ fn parse_html_token(mut input: impl Iterator<Item = TokenTree>) -> Result<HtmlTo
                     // TODO: Parse attributes
                     let attributes = Vec::new();
 
-                    yum!(input, TokenTree::Punct(ref punct) if punct.as_char() == '>');
+                    match input.next().ok_or(TagError::UnexpectedEnd)? {
+                        TokenTree::Punct(ref punct) if punct.as_char() == '>' => {
+                            // Opening tag
 
-                    Ok(HtmlToken::OpenTag(HtmlOpenTag {
-                        name,
-                        attributes,
-                    }))
+                            Ok(HtmlToken::OpenTag(HtmlOpenTag {
+                                name,
+                                attributes,
+                            }))
+                        },
+                        TokenTree::Punct(ref punct) if punct.as_char() == '/' => {
+                            // Self-closing tag
+
+                            yum!(input, TokenTree::Punct(ref punct) if punct.as_char() == '>');
+
+                            Ok(HtmlToken::SelfClosingTag(HtmlSelfClosingTag {
+                                name,
+                                attributes,
+                            }))
+                        },
+                        unexpected => return Err(TagError::UnexpectedToken(unexpected)),
+                    }
                 },
                 unexpected => return Err(TagError::UnexpectedToken(unexpected)),
             }

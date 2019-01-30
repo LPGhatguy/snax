@@ -27,9 +27,9 @@ impl From<HtmlTag> for HtmlContent {
     }
 }
 
-impl<T> From<T> for HtmlContent where T: Into<Cow<'static, str>> {
-    fn from(stringish: T) -> HtmlContent {
-        HtmlContent::Text(stringish.into())
+impl<T> From<T> for HtmlContent where T: std::fmt::Display {
+    fn from(displayable: T) -> HtmlContent {
+        HtmlContent::Text(Cow::Owned(format!("{}", displayable)))
     }
 }
 
@@ -59,7 +59,18 @@ mod test {
     }
 
     #[test]
-    fn literal_content() {
+    fn empty_self_closing() {
+        let tag = snax!(<div />);
+
+        assert_eq!(tag, HtmlTag {
+            name: Cow::Borrowed("div"),
+            attributes: HashMap::new(),
+            children: Vec::new(),
+        });
+    }
+
+    #[test]
+    fn literal_string() {
         let tag = snax!(
             <span>
                 "Hello, world!"
@@ -76,11 +87,49 @@ mod test {
     }
 
     #[test]
+    fn literal_block() {
+        let tag = snax!(
+            <span>
+                { 5 + 5 }
+            </span>
+        );
+
+        assert_eq!(tag, HtmlTag {
+            name: Cow::Borrowed("span"),
+            attributes: HashMap::new(),
+            children: vec![
+                HtmlContent::Text(Cow::Borrowed("10")),
+            ],
+        });
+    }
+
+    #[test]
     fn nested_tags() {
         let tag = snax!(
             <div>
                 <span>
                 </span>
+            </div>
+        );
+
+        assert_eq!(tag, HtmlTag {
+            name: Cow::Borrowed("div"),
+            attributes: HashMap::new(),
+            children: vec![
+                HtmlContent::Tag(HtmlTag {
+                    name: Cow::Borrowed("span"),
+                    attributes: HashMap::new(),
+                    children: Vec::new(),
+                }),
+            ],
+        });
+    }
+
+    #[test]
+    fn nested_tags_self_closing() {
+        let tag = snax!(
+            <div>
+                <span />
             </div>
         );
 
