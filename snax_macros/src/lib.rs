@@ -171,29 +171,39 @@ fn parse_html_token(mut input: impl Iterator<Item = TokenTree>) -> Result<HtmlTo
                     }))
                 },
                 TokenTree::Ident(name) => {
-                    // TODO: Parse attributes
-                    let attributes = Vec::new();
+                    let mut attributes = Vec::new();
 
-                    match input.next().ok_or(TagError::UnexpectedEnd)? {
-                        TokenTree::Punct(ref punct) if punct.as_char() == '>' => {
-                            // Opening tag
+                    loop {
+                        match input.next().ok_or(TagError::UnexpectedEnd)? {
+                            TokenTree::Ident(attribute_name) => {
+                                yum!(input, TokenTree::Punct(ref punct) if punct.as_char() == '=');
 
-                            Ok(HtmlToken::OpenTag(HtmlOpenToken {
-                                name,
-                                attributes,
-                            }))
-                        },
-                        TokenTree::Punct(ref punct) if punct.as_char() == '/' => {
-                            // Self-closing tag
+                                match input.next().ok_or(TagError::UnexpectedEnd)? {
+                                    content @ TokenTree::Literal(_) => attributes.push((attribute_name, content)),
+                                    content @ TokenTree::Group(_) => attributes.push((attribute_name, content)),
+                                    unexpected => return Err(TagError::UnexpectedToken(unexpected)),
+                                }
+                            },
+                            TokenTree::Punct(ref punct) if punct.as_char() == '>' => {
+                                // Opening tag
 
-                            yum!(input, TokenTree::Punct(ref punct) if punct.as_char() == '>');
+                                return Ok(HtmlToken::OpenTag(HtmlOpenToken {
+                                    name,
+                                    attributes,
+                                }));
+                            },
+                            TokenTree::Punct(ref punct) if punct.as_char() == '/' => {
+                                // Self-closing tag
 
-                            Ok(HtmlToken::SelfClosingTag(HtmlSelfClosingToken {
-                                name,
-                                attributes,
-                            }))
-                        },
-                        unexpected => return Err(TagError::UnexpectedToken(unexpected)),
+                                yum!(input, TokenTree::Punct(ref punct) if punct.as_char() == '>');
+
+                                return Ok(HtmlToken::SelfClosingTag(HtmlSelfClosingToken {
+                                    name,
+                                    attributes,
+                                }));
+                            },
+                            unexpected => return Err(TagError::UnexpectedToken(unexpected)),
+                        }
                     }
                 },
                 unexpected => return Err(TagError::UnexpectedToken(unexpected)),
@@ -217,7 +227,7 @@ fn emit_self_closing_tag(tag: &HtmlSelfClosingTag) -> TokenStream {
     let attribute_insertions: TokenStream = tag.attributes
         .iter()
         .map(|(key, value)| quote!(
-            __snax_attributes.insert(stringify!(#key), #value.into());
+            __snax_attributes.insert(stringify!(#key).into(), #value.into());
         ))
         .collect();
 
@@ -229,7 +239,7 @@ fn emit_self_closing_tag(tag: &HtmlSelfClosingTag) -> TokenStream {
             #attribute_insertions
 
             snax::HtmlSelfClosingTag {
-                name: std::borrow::Cow::Borrowed(stringify!(#tag_name)),
+                name: ::std::borrow::Cow::Borrowed(stringify!(#tag_name)),
                 attributes: __snax_attributes,
             }
         }
@@ -240,7 +250,7 @@ fn emit_tag(tag: &HtmlTag) -> TokenStream {
     let attribute_insertions: TokenStream = tag.attributes
         .iter()
         .map(|(key, value)| quote!(
-            __snax_attributes.insert(stringify!(#key), #value.into());
+            __snax_attributes.insert(stringify!(#key).into(), #value.into());
         ))
         .collect();
 
@@ -266,7 +276,7 @@ fn emit_tag(tag: &HtmlTag) -> TokenStream {
             #child_insertions
 
             snax::HtmlTag {
-                name: std::borrow::Cow::Borrowed(stringify!(#tag_name)),
+                name: ::std::borrow::Cow::Borrowed(stringify!(#tag_name)),
                 attributes: __snax_attributes,
                 children: __snax_children,
             }

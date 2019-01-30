@@ -17,6 +17,7 @@ Templates should just be Rust code. This is the philosophy behind JSX and React 
 
 ## Examples
 Not quite fully functional, but this is the goal:
+
 ```rust
 use snax::{snax, HtmlContent};
 

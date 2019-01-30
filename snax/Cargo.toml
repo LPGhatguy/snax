@@ -5,6 +5,7 @@ authors = ["Lucien Greathouse <me@lpghatguy.com>"]
 edition = "2018"
 
 [dependencies]
+htmlescape = "0.3.1"
+maplit = "1.0.1"
 proc-macro-hack = "0.5"
 snax_macros = { path = "../snax_macros" }
-htmlescape = "0.3.1"

@@ -84,6 +84,8 @@ mod test {
         borrow::Cow,
     };
 
+    use maplit::hashmap;
+
     use crate::{
         HtmlTag,
         HtmlSelfClosingTag,
@@ -104,12 +106,51 @@ mod test {
     }
 
     #[test]
-    fn empty_self_closing() {
+    fn self_closing() {
         let tag = snax!(<div />);
 
         assert_eq!(tag, HtmlSelfClosingTag {
             name: Cow::Borrowed("div"),
             attributes: HashMap::new(),
+        });
+    }
+
+    #[test]
+    fn empty_with_attributes() {
+        let tag = snax!(<div foo="bar" baz="qux"></div>);
+
+        assert_eq!(tag, HtmlTag {
+            name: Cow::Borrowed("div"),
+            attributes: hashmap!(
+                Cow::Borrowed("foo") => Cow::Borrowed("bar"),
+                Cow::Borrowed("baz") => Cow::Borrowed("qux"),
+            ),
+            children: Vec::new(),
+        });
+    }
+
+    #[test]
+    fn empty_with_block_attribute() {
+        let tag = snax!(<div foo={ (5 + 5).to_string() }></div>);
+
+        assert_eq!(tag, HtmlTag {
+            name: Cow::Borrowed("div"),
+            attributes: hashmap!(
+                Cow::Borrowed("foo") => Cow::Borrowed("10"),
+            ),
+            children: Vec::new(),
+        });
+    }
+
+    #[test]
+    fn self_closing_with_attribute() {
+        let tag = snax!(<div foo="hello" />);
+
+        assert_eq!(tag, HtmlSelfClosingTag {
+            name: Cow::Borrowed("div"),
+            attributes: hashmap!(
+                Cow::Borrowed("foo") => Cow::Borrowed("hello"),
+            ),
         });
     }
 
@@ -134,7 +175,7 @@ mod test {
     fn literal_block() {
         let tag = snax!(
             <span>
-                { format!("{}", 5 + 5) }
+                { (5 + 5).to_string() }
             </span>
         );
 
