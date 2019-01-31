@@ -120,6 +120,14 @@ pub struct UnescapedText {
     text: Cow<'static, str>,
 }
 
+impl UnescapedText {
+    pub fn new<T: Into<Cow<'static, str>>>(value: T) -> UnescapedText {
+        UnescapedText {
+            text: value.into(),
+        }
+    }
+}
+
 impl fmt::Display for UnescapedText {
     fn fmt(&self, output: &mut fmt::Formatter) -> fmt::Result {
         write!(output, "{}", self.text)
