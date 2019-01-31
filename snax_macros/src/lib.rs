@@ -2,8 +2,6 @@
 
 extern crate proc_macro;
 
-use std::mem;
-
 use proc_macro_hack::proc_macro_hack;
 use proc_macro2::{
     TokenStream,
@@ -16,9 +14,7 @@ use quote::quote;
 pub fn snax(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let input = TokenStream::from(input);
 
-    // println!("{:#?}", input);
-
-    let parsed_content = parse_root(input.into_iter().peekable())
+    let parsed_content = parse_root(input.into_iter())
         .expect("Could not even");
 
     let output = emit_content(&parsed_content);
@@ -100,22 +96,21 @@ fn assert_is_end(mut input: impl Iterator<Item = TokenTree>) {
     match input.next() {
         None => {},
         Some(token) => {
-            panic!("Expected end of Roxy macro, got {}", token);
+            panic!("Expected end of Snax macro, got {}", token);
         },
     }
 }
 
 fn parse_root(mut input: impl Iterator<Item = TokenTree>) -> Result<HtmlContent, TagError> {
-    let mut tag_stack: Vec<HtmlOpenToken> = Vec::new();
-    let mut children: Vec<HtmlContent> = Vec::new();
+    let mut tag_stack: Vec<(HtmlOpenToken, Vec<HtmlContent>)> = Vec::new();
 
     loop {
         match parse_html_token(&mut input)? {
             HtmlToken::OpenTag(opening_tag) => {
-                tag_stack.push(opening_tag);
+                tag_stack.push((opening_tag, Vec::new()));
             },
             HtmlToken::CloseTag(closing_tag) => {
-                let opening_tag = tag_stack.pop()
+                let (opening_tag, children) = tag_stack.pop()
                     .ok_or_else(|| TagError::UnexpectedHtmlToken(HtmlToken::CloseTag(closing_tag.clone())))?;
 
                 assert_eq!(opening_tag.name, closing_tag.name);
@@ -123,14 +118,17 @@ fn parse_root(mut input: impl Iterator<Item = TokenTree>) -> Result<HtmlContent,
                 let tag = HtmlTag {
                     name: opening_tag.name,
                     attributes: opening_tag.attributes,
-                    children: mem::replace(&mut children, Vec::new()),
+                    children,
                 };
 
-                if tag_stack.is_empty() {
-                    assert_is_end(&mut input);
-                    return Ok(HtmlContent::Tag(tag))
-                } else {
-                    children.push(HtmlContent::Tag(tag));
+                match tag_stack.last_mut() {
+                    None => {
+                        assert_is_end(&mut input);
+                        return Ok(HtmlContent::Tag(tag));
+                    },
+                    Some((_, parent_children)) => {
+                        parent_children.push(HtmlContent::Tag(tag));
+                    },
                 }
             },
             HtmlToken::SelfClosingTag(self_closing_tag) => {
@@ -139,19 +137,25 @@ fn parse_root(mut input: impl Iterator<Item = TokenTree>) -> Result<HtmlContent,
                     attributes: self_closing_tag.attributes,
                 };
 
-                if tag_stack.is_empty() {
-                    assert_is_end(&mut input);
-                    return Ok(HtmlContent::SelfClosingTag(tag))
-                } else {
-                    children.push(HtmlContent::SelfClosingTag(tag));
+                match tag_stack.last_mut() {
+                    None => {
+                        assert_is_end(&mut input);
+                        return Ok(HtmlContent::SelfClosingTag(tag));
+                    },
+                    Some((_, parent_children)) => {
+                        parent_children.push(HtmlContent::SelfClosingTag(tag));
+                    },
                 }
             },
             HtmlToken::Textish(textish) => {
-                if tag_stack.is_empty() {
-                    assert_is_end(&mut input);
-                    return Ok(HtmlContent::Textish(textish.content));
-                } else {
-                    children.push(HtmlContent::Textish(textish.content));
+                match tag_stack.last_mut() {
+                    None => {
+                        assert_is_end(&mut input);
+                        return Ok(HtmlContent::Textish(textish.content));
+                    },
+                    Some((_, parent_children)) => {
+                        parent_children.push(HtmlContent::Textish(textish.content));
+                    },
                 }
             },
         }

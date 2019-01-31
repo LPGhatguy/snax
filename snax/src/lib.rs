@@ -264,6 +264,12 @@ mod test {
 
     use crate as snax;
 
+    fn compare(a: &HtmlContent, b: &HtmlContent) {
+        if a != b {
+            panic!("HtmlContent not the same!\nLeft: {:#?}\n{}\n\nRight: {:#?}\n{}", a, a, b, b);
+        }
+    }
+
     #[test]
     fn empty() {
         let tag = snax!(<div></div>);
@@ -434,6 +440,33 @@ mod test {
             children: vec![
                 HtmlContent::Tag(HtmlTag {
                     name: Cow::Borrowed("span"),
+                    attributes: HashMap::new(),
+                    children: Vec::new(),
+                }),
+            ],
+        }));
+    }
+
+    #[test]
+    fn adjacent_tags() {
+        let tag = snax!(
+            <div>
+                <span></span>
+                <div></div>
+            </div>
+        );
+
+        compare(&tag, &HtmlContent::Tag(HtmlTag {
+            name: Cow::Borrowed("div"),
+            attributes: HashMap::new(),
+            children: vec![
+                HtmlContent::Tag(HtmlTag {
+                    name: Cow::Borrowed("span"),
+                    attributes: HashMap::new(),
+                    children: Vec::new(),
+                }),
+                HtmlContent::Tag(HtmlTag {
+                    name: Cow::Borrowed("div"),
                     attributes: HashMap::new(),
                     children: Vec::new(),
                 }),
