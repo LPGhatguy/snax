@@ -30,7 +30,7 @@ impl fmt::Display for HtmlTag {
         write!(output, "<{}", self.name)?;
 
         for (key, value) in &self.attributes {
-            write!(output, " {}=\"{}=\"", key, htmlescape::encode_minimal(value))?;
+            write!(output, " {}=\"{}\"", key, htmlescape::encode_minimal(value))?;
         }
 
         write!(output, ">")?;
@@ -54,7 +54,7 @@ impl fmt::Display for HtmlSelfClosingTag {
         write!(output, "<{}", self.name)?;
 
         for (key, value) in &self.attributes {
-            write!(output, " {}=\"{}=\"", key, htmlescape::encode_minimal(value))?;
+            write!(output, " {}=\"{}\"", key, htmlescape::encode_minimal(value))?;
         }
 
         write!(output, "/>")
