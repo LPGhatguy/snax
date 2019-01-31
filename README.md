@@ -32,7 +32,7 @@ fn render_page() -> HtmlContent {
 				<title>"Hello, Snax!"</title>
 			</head>
 			<body>
-				{ Fragment::from([35, 23, 0].map(render_age)) }
+				{ Fragment::from([35, 23, 0].iter().map(render_age)) }
 			</body>
 		</html>
 	)

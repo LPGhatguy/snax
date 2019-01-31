@@ -220,6 +220,14 @@ impl From<Cow<'static, str>> for HtmlContent {
     }
 }
 
+impl<'a> From<&'a &'static str> for HtmlContent {
+    fn from(value: &'a &'static str) -> HtmlContent {
+        HtmlContent::EscapedText(EscapedText {
+            text: Cow::Borrowed(*value),
+        })
+    }
+}
+
 #[cfg(test)]
 mod test {
     use std::{
@@ -336,7 +344,7 @@ mod test {
     fn literal_block_fragment() {
         let tag = snax!(
             <span>
-                { Fragment::new(["hello", "world"].iter().cloned()) }
+                { Fragment::new(["hello", "world"].iter()) }
             </span>
         );
 
@@ -346,6 +354,49 @@ mod test {
             children: vec![
                 "hello".into(),
                 "world".into(),
+            ],
+        }));
+    }
+
+    #[test]
+    fn literal_block_content_fragments() {
+        fn render_age(age: &u32) -> HtmlContent {
+            snax!(
+                <span>{ age.to_string() }</span>
+            )
+        }
+
+        let tag = snax!(
+            <div>
+                { Fragment::new([32, 2, 114].iter().map(render_age)) }
+            </div>
+        );
+
+        assert_eq!(tag, HtmlContent::Tag(HtmlTag {
+            name: Cow::Borrowed("div"),
+            attributes: HashMap::new(),
+            children: vec![
+                HtmlContent::Tag(HtmlTag {
+                    name: Cow::Borrowed("span"),
+                    attributes: HashMap::new(),
+                    children: vec![
+                        "32".into(),
+                    ],
+                }),
+                HtmlContent::Tag(HtmlTag {
+                    name: Cow::Borrowed("span"),
+                    attributes: HashMap::new(),
+                    children: vec![
+                        "2".into(),
+                    ],
+                }),
+                HtmlContent::Tag(HtmlTag {
+                    name: Cow::Borrowed("span"),
+                    attributes: HashMap::new(),
+                    children: vec![
+                        "114".into(),
+                    ],
+                }),
             ],
         }));
     }
