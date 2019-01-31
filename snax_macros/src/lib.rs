@@ -231,7 +231,7 @@ fn emit_self_closing_tag(tag: &HtmlSelfClosingTag) -> TokenStream {
     let attribute_insertions: TokenStream = tag.attributes
         .iter()
         .map(|(key, value)| quote!(
-            __snax_attributes.insert(stringify!(#key).into(), #value.into());
+            __snax_tag.attributes.insert(stringify!(#key).into(), #value.into());
         ))
         .collect();
 
@@ -239,13 +239,14 @@ fn emit_self_closing_tag(tag: &HtmlSelfClosingTag) -> TokenStream {
 
     quote!(
         {
-            let mut __snax_attributes = ::std::collections::HashMap::new();
+            let mut __snax_tag = snax::HtmlSelfClosingTag {
+                name: ::std::borrow::Cow::Borrowed(stringify!(#tag_name)),
+                attributes: ::std::collections::HashMap::new(),
+            };
+
             #attribute_insertions
 
-            snax::HtmlContent::SelfClosingTag(snax::HtmlSelfClosingTag {
-                name: ::std::borrow::Cow::Borrowed(stringify!(#tag_name)),
-                attributes: __snax_attributes,
-            })
+            snax::HtmlContent::SelfClosingTag(__snax_tag)
         }
     )
 }
@@ -254,7 +255,7 @@ fn emit_tag(tag: &HtmlTag) -> TokenStream {
     let attribute_insertions: TokenStream = tag.attributes
         .iter()
         .map(|(key, value)| quote!(
-            __snax_attributes.insert(stringify!(#key).into(), #value.into());
+            __snax_tag.attributes.insert(stringify!(#key).into(), #value.into());
         ))
         .collect();
 
@@ -273,15 +274,13 @@ fn emit_tag(tag: &HtmlTag) -> TokenStream {
 
     quote!(
         {
-            let mut __snax_attributes = ::std::collections::HashMap::new();
-            #attribute_insertions
-
             let mut __snax_tag = snax::HtmlTag {
                 name: ::std::borrow::Cow::Borrowed(stringify!(#tag_name)),
-                attributes: __snax_attributes,
+                attributes: ::std::collections::HashMap::new(),
                 children: ::std::vec::Vec::new(),
             };
 
+            #attribute_insertions
             #child_insertions
 
             snax::HtmlContent::Tag(__snax_tag)
