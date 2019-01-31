@@ -27,8 +27,13 @@ impl HtmlTag {
 
 impl fmt::Display for HtmlTag {
     fn fmt(&self, output: &mut fmt::Formatter) -> fmt::Result {
-        // TODO: Write attributes
-        write!(output, "<{}>", self.name)?;
+        write!(output, "<{}", self.name)?;
+
+        for (key, value) in &self.attributes {
+            write!(output, " {}=\"{}=\"", key, htmlescape::encode_minimal(value))?;
+        }
+
+        write!(output, ">")?;
 
         for child in &self.children {
             write!(output, "{}", child)?;
@@ -46,8 +51,13 @@ pub struct HtmlSelfClosingTag {
 
 impl fmt::Display for HtmlSelfClosingTag {
     fn fmt(&self, output: &mut fmt::Formatter) -> fmt::Result {
-        // TODO: Write attributes
-        write!(output, "<{} />", self.name)
+        write!(output, "<{}", self.name)?;
+
+        for (key, value) in &self.attributes {
+            write!(output, " {}=\"{}=\"", key, htmlescape::encode_minimal(value))?;
+        }
+
+        write!(output, "/>")
     }
 }
 
