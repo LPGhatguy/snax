@@ -15,9 +15,7 @@ Templates should just be Rust code. This is the philosophy behind JSX and React 
 * (Maybe) compile-time template checking. This isn't important to me right now
 * Fast Enough™
 
-## Examples
-Not quite fully functional, but this is the goal:
-
+## Example
 ```rust
 use snax::{snax, Fragmment, HtmlContent};
 
@@ -46,3 +44,6 @@ fn render_age(age: u32) -> HtmlContent {
 	)
 }
 ```
+
+## License
+Snax is available under the MIT license. See [LICENSE.txt](LICENSE.txt) for details.
