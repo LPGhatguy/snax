@@ -4,7 +4,6 @@ extern crate proc_macro;
 
 use proc_macro_hack::proc_macro_hack;
 use proc_macro2::{
-    Ident,
     TokenStream,
     TokenTree,
 };
@@ -13,6 +12,7 @@ use quote::quote;
 use snax_syntax::{
     SnaxItem,
     SnaxTag,
+    SnaxAttribute,
     SnaxSelfClosingTag,
 };
 
@@ -36,12 +36,18 @@ fn emit_item(item: &SnaxItem) -> TokenStream {
     }
 }
 
-fn emit_attributes(attributes: &[(Ident, TokenTree)]) -> TokenStream {
+fn emit_attributes(attributes: &[SnaxAttribute]) -> TokenStream {
     attributes
         .iter()
-        .map(|(key, value)| quote!(
-            __snax_tag.attributes.insert(stringify!(#key).into(), #value.into());
-        ))
+        .map(|attribute| {
+            match attribute {
+                SnaxAttribute::Simple { name, value } => {
+                    quote!(
+                        __snax_tag.attributes.insert(stringify!(#name).into(), #value.into());
+                    )
+                },
+            }
+        })
         .collect()
 }
 

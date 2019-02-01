@@ -12,9 +12,17 @@ pub enum HtmlToken {
 }
 
 #[derive(Debug)]
+pub enum SnaxAttribute {
+    Simple {
+        name: Ident,
+        value: TokenTree,
+    },
+}
+
+#[derive(Debug)]
 pub struct HtmlOpenToken {
     pub name: Ident,
-    pub attributes: Vec<(Ident, TokenTree)>,
+    pub attributes: Vec<SnaxAttribute>,
 }
 
 #[derive(Debug, Clone)]
@@ -25,7 +33,7 @@ pub struct HtmlCloseToken {
 #[derive(Debug)]
 pub struct HtmlSelfClosingToken {
     pub name: Ident,
-    pub attributes: Vec<(Ident, TokenTree)>,
+    pub attributes: Vec<SnaxAttribute>,
 }
 
 #[derive(Debug)]
@@ -74,8 +82,12 @@ pub fn parse_html_token(mut input: impl Iterator<Item = TokenTree>) -> Result<Ht
                                 expect_next!(input, TokenTree::Punct(ref punct) if punct.as_char() == '=');
 
                                 match input.next().ok_or(TokenizeError::UnexpectedEnd)? {
-                                    content @ TokenTree::Literal(_) => attributes.push((attribute_name, content)),
-                                    content @ TokenTree::Group(_) => attributes.push((attribute_name, content)),
+                                    value @ TokenTree::Literal(_) | value @ TokenTree::Group(_) => {
+                                        attributes.push(SnaxAttribute::Simple {
+                                            name: attribute_name,
+                                            value,
+                                        });
+                                    },
                                     unexpected => return Err(TokenizeError::UnexpectedToken(unexpected)),
                                 }
                             },
