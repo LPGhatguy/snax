@@ -239,14 +239,14 @@ fn emit_self_closing_tag(tag: &HtmlSelfClosingTag) -> TokenStream {
 
     quote!(
         {
-            let mut __snax_tag = snax::HtmlSelfClosingTag {
+            let mut __snax_tag = ::snax::HtmlSelfClosingTag {
                 name: ::std::borrow::Cow::Borrowed(stringify!(#tag_name)),
                 attributes: ::std::collections::HashMap::new(),
             };
 
             #attribute_insertions
 
-            snax::HtmlContent::SelfClosingTag(__snax_tag)
+            ::snax::HtmlContent::SelfClosingTag(__snax_tag)
         }
     )
 }
@@ -274,7 +274,7 @@ fn emit_tag(tag: &HtmlTag) -> TokenStream {
 
     quote!(
         {
-            let mut __snax_tag = snax::HtmlTag {
+            let mut __snax_tag = ::snax::HtmlTag {
                 name: ::std::borrow::Cow::Borrowed(stringify!(#tag_name)),
                 attributes: ::std::collections::HashMap::new(),
                 children: ::std::vec::Vec::new(),
@@ -283,13 +283,13 @@ fn emit_tag(tag: &HtmlTag) -> TokenStream {
             #attribute_insertions
             #child_insertions
 
-            snax::HtmlContent::Tag(__snax_tag)
+            ::snax::HtmlContent::Tag(__snax_tag)
         }
     )
 }
 
 fn emit_textish(tt: &TokenTree) -> TokenStream {
     quote!(
-        snax::HtmlContent::from(#tt)
+        ::snax::HtmlContent::from(#tt)
     )
 }
