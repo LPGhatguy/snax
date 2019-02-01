@@ -3,7 +3,7 @@
 
 Templates should just be Rust code. This is the philosophy behind JSX and React and I think it's great.
 
-[typed-html](https://github.com/bodil/typed-html) is the closest thing to what I want. It's a big rough around the edges and I had technical problems trying to work on it, so I decided to see how far I could get with a clean slate.
+[typed-html](https://github.com/bodil/typed-html) is the closest thing to what I want. It's a bit rough around the edges and I had technical problems trying to work on it, so I decided to see how far I could get with a clean slate.
 
 ## Requirements
 * Rust 1.32+. State of the art, yo.
