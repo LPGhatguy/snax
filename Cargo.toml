@@ -1,5 +1,6 @@
 [workspace]
 members = [
 	"snax",
+	"snax_syntax",
 	"snax_macros",
 ]
