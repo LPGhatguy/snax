@@ -6,7 +6,9 @@ edition = "2018"
 
 [dependencies]
 htmlescape = "0.3.1"
-maplit = "1.0.1"
 proc-macro-hack = "0.5"
 proc-macro-nested = "0.1"
 snax_macros = { path = "../snax_macros" }
+
+[dev-dependencies]
+maplit = "1.0.1"
