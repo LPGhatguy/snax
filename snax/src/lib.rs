@@ -11,21 +11,21 @@ use proc_macro_hack::proc_macro_hack;
 pub use snax_macros::snax;
 
 #[derive(Debug, PartialEq)]
-pub struct HtmlTag {
-    pub name: Cow<'static, str>,
-    pub attributes: HashMap<Cow<'static, str>, Cow<'static, str>>,
-    pub children: Vec<HtmlContent>,
+pub struct HtmlTag<'a> {
+    pub name: Cow<'a, str>,
+    pub attributes: HashMap<Cow<'a, str>, Cow<'a, str>>,
+    pub children: Vec<HtmlContent<'a>>,
 }
 
-impl HtmlTag {
-    pub fn add_child<T: Into<HtmlContent>>(&mut self, child: T) {
+impl<'a> HtmlTag<'a> {
+    pub fn add_child<T: Into<HtmlContent<'a>>>(&mut self, child: T) {
         for item in child.into() {
             self.children.push(item);
         }
     }
 }
 
-impl fmt::Display for HtmlTag {
+impl<'a> fmt::Display for HtmlTag<'a> {
     fn fmt(&self, output: &mut fmt::Formatter) -> fmt::Result {
         write!(output, "<{}", self.name)?;
 
@@ -44,12 +44,12 @@ impl fmt::Display for HtmlTag {
 }
 
 #[derive(Debug, PartialEq)]
-pub struct HtmlSelfClosingTag {
-    pub name: Cow<'static, str>,
-    pub attributes: HashMap<Cow<'static, str>, Cow<'static, str>>,
+pub struct HtmlSelfClosingTag<'a> {
+    pub name: Cow<'a, str>,
+    pub attributes: HashMap<Cow<'a, str>, Cow<'a, str>>,
 }
 
-impl fmt::Display for HtmlSelfClosingTag {
+impl<'a> fmt::Display for HtmlSelfClosingTag<'a> {
     fn fmt(&self, output: &mut fmt::Formatter) -> fmt::Result {
         write!(output, "<{}", self.name)?;
 
@@ -62,14 +62,14 @@ impl fmt::Display for HtmlSelfClosingTag {
 }
 
 #[derive(Debug, PartialEq)]
-pub struct Fragment {
-    children: Vec<HtmlContent>,
+pub struct Fragment<'a> {
+    children: Vec<HtmlContent<'a>>,
 }
 
-impl Fragment {
-    pub fn new<T>(iter: T) -> Fragment
+impl<'a> Fragment<'a> {
+    pub fn new<T>(iter: T) -> Fragment<'a>
         where T: IntoIterator,
-              T::Item: Into<HtmlContent>,
+              T::Item: Into<HtmlContent<'a>>,
     {
         Fragment {
             children: iter.into_iter().map(Into::into).collect(),
@@ -77,16 +77,16 @@ impl Fragment {
     }
 }
 
-impl FromIterator<HtmlContent> for Fragment {
-    fn from_iter<I: IntoIterator<Item = HtmlContent>>(iter: I) -> Fragment {
+impl<'a> FromIterator<HtmlContent<'a>> for Fragment<'a> {
+    fn from_iter<I: IntoIterator<Item = HtmlContent<'a>>>(iter: I) -> Fragment<'a> {
         Fragment {
             children: iter.into_iter().collect(),
         }
     }
 }
 
-impl IntoIterator for Fragment {
-    type Item = HtmlContent;
+impl<'a> IntoIterator for Fragment<'a> {
+    type Item = HtmlContent<'a>;
     type IntoIter = std::vec::IntoIter<Self::Item>;
 
     fn into_iter(self) -> Self::IntoIter {
@@ -94,7 +94,7 @@ impl IntoIterator for Fragment {
     }
 }
 
-impl fmt::Display for Fragment {
+impl<'a> fmt::Display for Fragment<'a> {
     fn fmt(&self, output: &mut fmt::Formatter) -> fmt::Result {
         for child in &self.children {
             write!(output, "{}", child)?;
@@ -105,53 +105,53 @@ impl fmt::Display for Fragment {
 }
 
 #[derive(Debug, PartialEq)]
-pub struct EscapedText {
-    text: Cow<'static, str>,
+pub struct EscapedText<'a> {
+    text: Cow<'a, str>,
 }
 
-impl fmt::Display for EscapedText {
+impl<'a> fmt::Display for EscapedText<'a> {
     fn fmt(&self, output: &mut fmt::Formatter) -> fmt::Result {
         write!(output, "{}", htmlescape::encode_minimal(&self.text))
     }
 }
 
 #[derive(Debug, PartialEq)]
-pub struct UnescapedText {
-    text: Cow<'static, str>,
+pub struct UnescapedText<'a> {
+    text: Cow<'a, str>,
 }
 
-impl UnescapedText {
-    pub fn new<T: Into<Cow<'static, str>>>(value: T) -> UnescapedText {
+impl<'a> UnescapedText<'a> {
+    pub fn new<T: Into<Cow<'a, str>>>(value: T) -> UnescapedText<'a> {
         UnescapedText {
             text: value.into(),
         }
     }
 }
 
-impl fmt::Display for UnescapedText {
+impl<'a> fmt::Display for UnescapedText<'a> {
     fn fmt(&self, output: &mut fmt::Formatter) -> fmt::Result {
         write!(output, "{}", self.text)
     }
 }
 
 #[derive(Debug, PartialEq)]
-pub enum HtmlContent {
-    Tag(HtmlTag),
-    SelfClosingTag(HtmlSelfClosingTag),
-    EscapedText(EscapedText),
-    UnescapedText(UnescapedText),
-    Fragment(Fragment),
+pub enum HtmlContent<'a> {
+    Tag(HtmlTag<'a>),
+    SelfClosingTag(HtmlSelfClosingTag<'a>),
+    EscapedText(EscapedText<'a>),
+    UnescapedText(UnescapedText<'a>),
+    Fragment(Fragment<'a>),
     None,
 }
 
-pub enum HtmlContentIntoIter {
-    Once(std::iter::Once<HtmlContent>),
-    Children(std::vec::IntoIter<HtmlContent>),
+pub enum HtmlContentIntoIter<'a> {
+    Once(std::iter::Once<HtmlContent<'a>>),
+    Children(std::vec::IntoIter<HtmlContent<'a>>),
     None,
 }
 
-impl Iterator for HtmlContentIntoIter {
-    type Item = HtmlContent;
+impl<'a> Iterator for HtmlContentIntoIter<'a> {
+    type Item = HtmlContent<'a>;
 
     fn next(&mut self) -> Option<Self::Item> {
         match self {
@@ -162,9 +162,9 @@ impl Iterator for HtmlContentIntoIter {
     }
 }
 
-impl IntoIterator for HtmlContent {
-    type Item = HtmlContent;
-    type IntoIter = HtmlContentIntoIter;
+impl<'a> IntoIterator for HtmlContent<'a> {
+    type Item = HtmlContent<'a>;
+    type IntoIter = HtmlContentIntoIter<'a>;
 
     fn into_iter(self) -> Self::IntoIter {
         match self {
@@ -182,7 +182,7 @@ impl IntoIterator for HtmlContent {
     }
 }
 
-impl fmt::Display for HtmlContent {
+impl<'a> fmt::Display for HtmlContent<'a> {
     fn fmt(&self, output: &mut fmt::Formatter) -> fmt::Result {
         match self {
             HtmlContent::Tag(tag) => write!(output, "{}", tag),
@@ -195,32 +195,32 @@ impl fmt::Display for HtmlContent {
     }
 }
 
-impl From<HtmlTag> for HtmlContent {
-    fn from(tag: HtmlTag) -> HtmlContent {
+impl<'a> From<HtmlTag<'a>> for HtmlContent<'a> {
+    fn from(tag: HtmlTag<'a>) -> HtmlContent<'a> {
         HtmlContent::Tag(tag)
     }
 }
 
-impl From<HtmlSelfClosingTag> for HtmlContent {
-    fn from(tag: HtmlSelfClosingTag) -> HtmlContent {
+impl<'a> From<HtmlSelfClosingTag<'a>> for HtmlContent<'a> {
+    fn from(tag: HtmlSelfClosingTag<'a>) -> HtmlContent<'a> {
         HtmlContent::SelfClosingTag(tag)
     }
 }
 
-impl From<Fragment> for HtmlContent {
-    fn from(tag: Fragment) -> HtmlContent {
+impl<'a> From<Fragment<'a>> for HtmlContent<'a> {
+    fn from(tag: Fragment<'a>) -> HtmlContent<'a> {
         HtmlContent::Fragment(tag)
     }
 }
 
-impl From<UnescapedText> for HtmlContent {
-    fn from(tag: UnescapedText) -> HtmlContent {
+impl<'a> From<UnescapedText<'a>> for HtmlContent<'a> {
+    fn from(tag: UnescapedText<'a>) -> HtmlContent<'a> {
         HtmlContent::UnescapedText(tag)
     }
 }
 
-impl From<Option<HtmlContent>> for HtmlContent {
-    fn from(value: Option<HtmlContent>) -> HtmlContent {
+impl<'a> From<Option<HtmlContent<'a>>> for HtmlContent<'a> {
+    fn from(value: Option<HtmlContent<'a>>) -> HtmlContent<'a> {
         match value {
             Some(HtmlContent::None) => HtmlContent::None,
             Some(content) => content,
@@ -229,32 +229,32 @@ impl From<Option<HtmlContent>> for HtmlContent {
     }
 }
 
-impl From<&'static str> for HtmlContent {
-    fn from(value: &'static str) -> HtmlContent {
+impl<'a> From<&'a str> for HtmlContent<'a> {
+    fn from(value: &'a str) -> HtmlContent<'a> {
         HtmlContent::EscapedText(EscapedText {
             text: value.into(),
         })
     }
 }
 
-impl From<String> for HtmlContent {
-    fn from(value: String) -> HtmlContent {
+impl From<String> for HtmlContent<'static> {
+    fn from(value: String) -> HtmlContent<'static> {
         HtmlContent::EscapedText(EscapedText {
             text: value.into(),
         })
     }
 }
 
-impl From<Cow<'static, str>> for HtmlContent {
-    fn from(value: Cow<'static, str>) -> HtmlContent {
+impl<'a> From<Cow<'a, str>> for HtmlContent<'a> {
+    fn from(value: Cow<'a, str>) -> HtmlContent<'a> {
         HtmlContent::EscapedText(EscapedText {
             text: value,
         })
     }
 }
 
-impl<'a> From<&'a &'static str> for HtmlContent {
-    fn from(value: &'a &'static str) -> HtmlContent {
+impl<'a> From<&'a &'static str> for HtmlContent<'static> {
+    fn from(value: &'a &'static str) -> HtmlContent<'static> {
         HtmlContent::EscapedText(EscapedText {
             text: Cow::Borrowed(*value),
         })
@@ -279,9 +279,9 @@ mod test {
 
     use crate as snax;
 
-    fn compare<A, B>(a: A, b: B)
-        where A: Borrow<HtmlContent>,
-              B: Borrow<HtmlContent>,
+    fn compare<'a, 'b, A, B>(a: A, b: B)
+        where A: Borrow<HtmlContent<'a>>,
+              B: Borrow<HtmlContent<'b>>,
     {
         let a = a.borrow();
         let b = b.borrow();
@@ -296,6 +296,41 @@ mod test {
         let tag = snax!("hi");
 
         compare(tag, HtmlContent::from("hi"));
+    }
+
+    #[test]
+    fn composing_via_function() {
+        fn my_component(value: &str) -> HtmlContent {
+            snax!(
+                <span class="hello">{ value }</span>
+            )
+        }
+
+        // We want this to be a string to make sure the inferred lifetime for
+        // my_component is NOT 'static.
+        let cool_value = "hello".to_owned();
+
+        let tag = snax!(
+            <div>
+                { my_component(&cool_value) }
+            </div>
+        );
+
+        compare(tag, HtmlContent::Tag(HtmlTag {
+            name: Cow::Borrowed("div"),
+            attributes: HashMap::new(),
+            children: vec![
+                HtmlContent::Tag(HtmlTag {
+                    name: Cow::Borrowed("span"),
+                    attributes: hashmap! {
+                        Cow::Borrowed("class") => Cow::Borrowed("hello"),
+                    },
+                    children: vec![
+                        "hello".into(),
+                    ],
+                })
+            ],
+        }))
     }
 
     #[test]
@@ -325,10 +360,10 @@ mod test {
 
         assert_eq!(tag, HtmlContent::Tag(HtmlTag {
             name: Cow::Borrowed("div"),
-            attributes: hashmap!(
+            attributes: hashmap! {
                 Cow::Borrowed("foo") => Cow::Borrowed("bar"),
                 Cow::Borrowed("baz") => Cow::Borrowed("qux"),
-            ),
+            },
             children: Vec::new(),
         }));
     }
@@ -339,9 +374,9 @@ mod test {
 
         assert_eq!(tag, HtmlContent::Tag(HtmlTag {
             name: Cow::Borrowed("div"),
-            attributes: hashmap!(
+            attributes: hashmap! {
                 Cow::Borrowed("foo") => Cow::Borrowed("10"),
-            ),
+            },
             children: Vec::new(),
         }));
     }
@@ -352,9 +387,9 @@ mod test {
 
         assert_eq!(tag, HtmlContent::SelfClosingTag(HtmlSelfClosingTag {
             name: Cow::Borrowed("div"),
-            attributes: hashmap!(
+            attributes: hashmap! {
                 Cow::Borrowed("foo") => Cow::Borrowed("hello"),
-            ),
+            },
         }));
     }
 
@@ -519,6 +554,41 @@ mod test {
                     attributes: HashMap::new(),
                 }),
             ],
+        }));
+    }
+
+    #[test]
+    fn borrow_content_nonstatic() {
+        let foo = "hello".to_string();
+
+        let tag = snax!(
+            <span>
+                { foo.as_str() }
+            </span>
+        );
+
+        compare(tag, HtmlContent::Tag(HtmlTag {
+            name: Cow::Borrowed("span"),
+            attributes: HashMap::new(),
+            children: vec![
+                "hello".into(),
+            ],
+        }))
+    }
+
+    #[test]
+    fn borrow_attribute_nonstatic() {
+        let foo = "world".to_string();
+
+        let tag = snax!(
+            <span hello={ foo.as_str() } />
+        );
+
+        compare(tag, HtmlContent::SelfClosingTag(HtmlSelfClosingTag {
+            name: Cow::Borrowed("span"),
+            attributes: hashmap! {
+                Cow::Borrowed("hello") => Cow::Borrowed("world"),
+            },
         }));
     }
 }
