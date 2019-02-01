@@ -10,7 +10,7 @@ Templates should just be Rust code. This is the philosophy behind JSX and React 
 
 ## Goals
 * JSX-like syntax via proc macro
-	* Embed arbitrary Rust code in braces
+    * Embed arbitrary Rust code in braces
 * Output to (typed?) virtual DOM, have builtin mechanism to turn DOM into string
 * (Maybe) compile-time template checking. This isn't important to me right now
 * Fast Enough™
@@ -20,28 +20,28 @@ Templates should just be Rust code. This is the philosophy behind JSX and React 
 use snax::{snax, Fragmment, HtmlContent};
 
 fn main() {
-	println!("{}", render_page());
+    println!("{}", render_page());
 }
 
 fn render_page() -> HtmlContent {
-	snax!(
-		<html>
-			<head>
-				<title>"Hello, Snax!"</title>
-			</head>
-			<body>
-				{ Fragment::from((0..16).map(render_age)) }
-			</body>
-		</html>
-	)
+    snax!(
+        <html>
+            <head>
+                <title>"Hello, Snax!"</title>
+            </head>
+            <body>
+                { Fragment::from((0..16).map(render_age)) }
+            </body>
+        </html>
+    )
 }
 
 fn render_age(age: u32) -> HtmlContent {
-	snax!(
-		<div class="age-widget">
-			{ format!("Age: {}", age) }
-		</div>
-	)
+    snax!(
+        <div class="age-widget">
+            { format!("Age: {}", age) }
+        </div>
+    )
 }
 ```
 
