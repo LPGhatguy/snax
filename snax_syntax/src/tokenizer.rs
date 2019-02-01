@@ -3,20 +3,14 @@ use proc_macro2::{
     Ident,
 };
 
+use crate::SnaxAttribute;
+
 #[derive(Debug)]
 pub enum HtmlToken {
     OpenTag(HtmlOpenToken),
     CloseTag(HtmlCloseToken),
     SelfClosingTag(HtmlSelfClosingToken),
     Textish(HtmlTextishToken),
-}
-
-#[derive(Debug)]
-pub enum SnaxAttribute {
-    Simple {
-        name: Ident,
-        value: TokenTree,
-    },
 }
 
 #[derive(Debug)]
