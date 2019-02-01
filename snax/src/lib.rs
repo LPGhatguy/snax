@@ -20,7 +20,7 @@ pub struct HtmlTag {
 impl HtmlTag {
     pub fn add_child<T: Into<HtmlContent>>(&mut self, child: T) {
         for item in child.into() {
-            self.children.push(item.into());
+            self.children.push(item);
         }
     }
 }
@@ -141,11 +141,13 @@ pub enum HtmlContent {
     EscapedText(EscapedText),
     UnescapedText(UnescapedText),
     Fragment(Fragment),
+    None,
 }
 
 pub enum HtmlContentIntoIter {
     Once(std::iter::Once<HtmlContent>),
     Children(std::vec::IntoIter<HtmlContent>),
+    None,
 }
 
 impl Iterator for HtmlContentIntoIter {
@@ -155,6 +157,7 @@ impl Iterator for HtmlContentIntoIter {
         match self {
             HtmlContentIntoIter::Once(inner) => inner.next(),
             HtmlContentIntoIter::Children(inner) => inner.next(),
+            HtmlContentIntoIter::None => None,
         }
     }
 }
@@ -174,6 +177,7 @@ impl IntoIterator for HtmlContent {
             HtmlContent::Fragment(Fragment { children }) => {
                 HtmlContentIntoIter::Children(children.into_iter())
             },
+            HtmlContent::None => HtmlContentIntoIter::None,
         }
     }
 }
@@ -186,6 +190,7 @@ impl fmt::Display for HtmlContent {
             HtmlContent::EscapedText(text) => write!(output, "{}", text),
             HtmlContent::UnescapedText(text) => write!(output, "{}", text),
             HtmlContent::Fragment(fragment) => write!(output, "{}", fragment),
+            HtmlContent::None => Ok(()),
         }
     }
 }
@@ -211,6 +216,15 @@ impl From<Fragment> for HtmlContent {
 impl From<UnescapedText> for HtmlContent {
     fn from(tag: UnescapedText) -> HtmlContent {
         HtmlContent::UnescapedText(tag)
+    }
+}
+
+impl From<Option<HtmlContent>> for HtmlContent {
+    fn from(value: Option<HtmlContent>) -> HtmlContent {
+        match value {
+            Some(content) => content,
+            None => HtmlContent::None,
+        }
     }
 }
 
@@ -250,7 +264,7 @@ impl<'a> From<&'a &'static str> for HtmlContent {
 mod test {
     use std::{
         collections::HashMap,
-        borrow::Cow,
+        borrow::{Borrow, Cow},
     };
 
     use maplit::hashmap;
@@ -264,10 +278,23 @@ mod test {
 
     use crate as snax;
 
-    fn compare(a: &HtmlContent, b: &HtmlContent) {
+    fn compare<A, B>(a: A, b: B)
+        where A: Borrow<HtmlContent>,
+              B: Borrow<HtmlContent>,
+    {
+        let a = a.borrow();
+        let b = b.borrow();
+
         if a != b {
             panic!("HtmlContent not the same!\nLeft: {:#?}\n{}\n\nRight: {:#?}\n{}", a, a, b, b);
         }
+    }
+
+    #[test]
+    fn just_string() {
+        let tag = snax!("hi");
+
+        compare(tag, HtmlContent::from("hi"));
     }
 
     #[test]

@@ -289,5 +289,7 @@ fn emit_tag(tag: &HtmlTag) -> TokenStream {
 }
 
 fn emit_textish(tt: &TokenTree) -> TokenStream {
-    [tt].iter().cloned().cloned().collect()
+    quote!(
+        snax::HtmlContent::from(#tt)
+    )
 }
