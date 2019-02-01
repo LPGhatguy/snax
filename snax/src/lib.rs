@@ -222,6 +222,7 @@ impl From<UnescapedText> for HtmlContent {
 impl From<Option<HtmlContent>> for HtmlContent {
     fn from(value: Option<HtmlContent>) -> HtmlContent {
         match value {
+            Some(HtmlContent::None) => HtmlContent::None,
             Some(content) => content,
             None => HtmlContent::None,
         }
