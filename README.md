@@ -1,64 +1,56 @@
-# Snax: JSX-ish for Rust
-**Early WIP**
-
+# Snax: JSX-like for Rust
 Templates should just be Rust code. This is the philosophy behind JSX and React and I think it's great.
 
-[typed-html](https://github.com/bodil/typed-html) is the closest thing to what I want. It's a bit rough around the edges and I had technical problems trying to work on it, so I decided to see how far I could get with a clean slate.
+Snax is an implementation of a JSX-like grammar for Rust. You can use it as part of the `snax` crate, which provides a complete DOM that's quick to turn into a string.
 
-## Requirements
-* Rust 1.32+. State of the art, yo.
+If you're a proc macro author, you can also consume the `snax_syntax` to produce whatever structures you need for your project. This can be used to support a typed DOM or any React-like framework!
 
-## Goals
-* JSX-like syntax via proc macro
-    * Embed arbitrary Rust code in braces
-* Output to (typed?) virtual DOM, have builtin mechanism to turn DOM into string
-* (Maybe) compile-time template checking. This isn't important to me right now
-* Fast Enough™
+## Installation
+Snax requires Rust 1.32 or newer and works on stable.
 
-## Example
+It isn't published to crates.io yet, but you can use a Git dependency:
+
+```toml
+snax = { git = "https://github.com/LPGhatguy/snax.git" }
+```
+
+Some things are still a bit in flux, so I'm sorry in advance if I break anything!
+
+## Examples
+
+### Simple Page
 ```rust
-use snax::{snax, Fragmment, HtmlContent};
+use snax::snax;
 
 fn main() {
-    println!("{}", render_page());
-}
+    let page_title = "Hello, world, from Snax!";
 
-fn render_page() -> HtmlContent {
-    snax!(
+    let page = snax!(
+        /* Snax supports regular multi-line Rust comments. */
         <html>
             <head>
-                /* Literal strings need to be quoted, unlike JSX */
+                /*
+                    Literal strings need to be quoted, unlike JSX.
+                    This makes whitespace much more explicit, which is useful!
+                */
                 <title>"Hello, Snax!"</title>
             </head>
             <body>
-                /* Snax supports fragment syntax, like JSX! */
-                <ul>
-                    { snax_features() }
-                </ul>
-
-                /* Fragments can also be pieced together via iterators! */
-                { Fragment::from((0..16).map(render_age)) }
+                <h1>
+                    /*
+                        Snax supports embedding arbitrary Rust expressions as long as they
+                        can be turned into a DOM node. String and &str work great here!
+                    */
+                    { page_title }
+                </h1>
             </body>
         </html>
-    )
-}
+    );
 
-fn snax_features() -> HtmlContent {
-    snax!(
-        <>
-            <li>Supports fragment syntax</li>
-            <li>Has an independent grammar</li>
-            <li>Provides a DOM implementation!</li>
-        </>
-    )
-}
-
-fn render_age(age: u32) -> HtmlContent {
-    snax!(
-        <div class="age-widget">
-            { format!("Age: {}", age) }
-        </div>
-    )
+    // The result of the snax! macro is an HtmlContent.
+    // It implements Display and gives you compact HTML without a doctype!
+    println!("<!doctype html>");
+    println!("{}", page);
 }
 ```
 
