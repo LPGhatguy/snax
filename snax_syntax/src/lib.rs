@@ -64,6 +64,9 @@ pub enum SnaxItem {
     /// An empty tag, which can only have attributes.
     SelfClosingTag(SnaxSelfClosingTag),
 
+    /// A fragment, containing a list of zero or more children.
+    Fragment(SnaxFragment),
+
     /// A block of content, which can be a literal or a group that evaluates to
     /// an `Into<SnaxItem>` at runtime.
     Content(TokenTree),
@@ -96,6 +99,22 @@ pub struct SnaxSelfClosingTag {
     pub attributes: Vec<SnaxAttribute>,
 }
 
+/// A fragment, which only contains children.
+///
+/// ```html
+/// <>
+///     <span>Hey</span>
+///     <span>there!</span>
+/// </>
+/// ```
+///
+/// This syntax comes from JSX, and in frameworks like React, it's expected that
+/// the children of a fragment will be merged into the fragment's parent.
+#[derive(Debug)]
+pub struct SnaxFragment {
+    pub children: Vec<SnaxItem>,
+}
+
 #[derive(Debug)]
 pub enum ParseError {
     Tokenize(TokenizeError),
@@ -118,19 +137,30 @@ macro_rules! expect_end {
     };
 }
 
+#[derive(Debug)]
+enum OpenToken {
+    Tag(HtmlOpenToken),
+    Fragment,
+}
+
 /// Attempts to parse a `proc_macro2::TokenStream` into a `SnaxItem`.
 pub fn parse(input_stream: TokenStream) -> Result<SnaxItem, ParseError> {
     let mut input = input_stream.into_iter();
-    let mut tag_stack: Vec<(HtmlOpenToken, Vec<SnaxItem>)> = Vec::new();
+    let mut tag_stack: Vec<(OpenToken, Vec<SnaxItem>)> = Vec::new();
 
     loop {
         match parse_html_token(&mut input)? {
             HtmlToken::OpenTag(opening_tag) => {
-                tag_stack.push((opening_tag, Vec::new()));
+                tag_stack.push((OpenToken::Tag(opening_tag), Vec::new()));
             },
             HtmlToken::CloseTag(closing_tag) => {
-                let (opening_tag, children) = tag_stack.pop()
+                let (open_token, children) = tag_stack.pop()
                     .ok_or_else(|| ParseError::UnexpectedItem(HtmlToken::CloseTag(closing_tag.clone())))?;
+
+                let opening_tag = match open_token {
+                    OpenToken::Tag(tag) => tag,
+                    OpenToken::Fragment => return Err(ParseError::UnexpectedItem(HtmlToken::CloseTag(closing_tag.clone()))),
+                };
 
                 assert_eq!(opening_tag.name, closing_tag.name);
 
@@ -147,6 +177,32 @@ pub fn parse(input_stream: TokenStream) -> Result<SnaxItem, ParseError> {
                     },
                     Some((_, parent_children)) => {
                         parent_children.push(SnaxItem::Tag(tag));
+                    },
+                }
+            },
+            HtmlToken::OpenFragment => {
+                tag_stack.push((OpenToken::Fragment, Vec::new()));
+            },
+            HtmlToken::CloseFragment => {
+                let (open_token, children) = tag_stack.pop()
+                    .ok_or_else(|| ParseError::UnexpectedItem(HtmlToken::CloseFragment))?;
+
+                match open_token {
+                    OpenToken::Fragment => {},
+                    OpenToken::Tag(_) => return Err(ParseError::UnexpectedItem(HtmlToken::CloseFragment)),
+                }
+
+                let fragment = SnaxFragment {
+                    children,
+                };
+
+                match tag_stack.last_mut() {
+                    None => {
+                        expect_end!(input);
+                        return Ok(SnaxItem::Fragment(fragment));
+                    },
+                    Some((_, parent_children)) => {
+                        parent_children.push(SnaxItem::Fragment(fragment));
                     },
                 }
             },

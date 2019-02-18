@@ -58,7 +58,7 @@ impl<'a> fmt::Display for HtmlSelfClosingTag<'a> {
 
 #[derive(Debug, PartialEq)]
 pub struct Fragment<'a> {
-    children: Vec<HtmlContent<'a>>,
+    pub children: Vec<HtmlContent<'a>>,
 }
 
 impl<'a> Fragment<'a> {
@@ -68,6 +68,12 @@ impl<'a> Fragment<'a> {
     {
         Fragment {
             children: iter.into_iter().map(Into::into).collect(),
+        }
+    }
+
+    pub fn add_child<T: Into<HtmlContent<'a>>>(&mut self, child: T) {
+        for item in child.into() {
+            self.children.push(item);
         }
     }
 }

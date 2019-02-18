@@ -89,6 +89,15 @@ fn self_closing() {
 }
 
 #[test]
+fn empty_fragment() {
+    let fragment = snax!(<> </>);
+
+    assert_eq!(fragment, HtmlContent::Fragment(Fragment {
+        children: Vec::new(),
+    }));
+}
+
+#[test]
 fn empty_with_attributes() {
     let tag = snax!(<div foo="bar" baz="qux"></div>);
 
@@ -140,6 +149,38 @@ fn literal_string() {
         attributes: HashMap::new(),
         children: vec![
             "Hello, world!".into(),
+        ],
+    }));
+}
+
+#[test]
+fn literal_string_fragment() {
+    let fragment = snax!(
+        <>
+            "Hello!"
+        </>
+    );
+
+    assert_eq!(fragment, HtmlContent::Fragment(Fragment {
+        children: vec![
+            "Hello!".into(),
+        ],
+    }));
+}
+
+#[test]
+fn literal_multiple_string_fragment() {
+    let fragment = snax!(
+        <>
+            "Hello, "
+            "world!"
+        </>
+    );
+
+    assert_eq!(fragment, HtmlContent::Fragment(Fragment {
+        children: vec![
+            "Hello, ".into(),
+            "world!".into(),
         ],
     }));
 }

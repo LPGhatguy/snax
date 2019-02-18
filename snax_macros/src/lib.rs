@@ -10,10 +10,11 @@ use proc_macro2::{
 use quote::quote;
 
 use snax_syntax::{
-    SnaxItem,
-    SnaxTag,
     SnaxAttribute,
+    SnaxFragment,
+    SnaxItem,
     SnaxSelfClosingTag,
+    SnaxTag,
 };
 
 #[proc_macro_hack]
@@ -33,6 +34,7 @@ fn emit_item(item: &SnaxItem) -> TokenStream {
         SnaxItem::Tag(tag) => emit_tag(tag),
         SnaxItem::SelfClosingTag(tag) => emit_self_closing_tag(tag),
         SnaxItem::Content(tt) => emit_content(tt),
+        SnaxItem::Fragment(fragment) => emit_fragment(fragment),
     }
 }
 
@@ -99,6 +101,22 @@ fn emit_tag(tag: &SnaxTag) -> TokenStream {
             #child_insertions
 
             ::snax::HtmlContent::Tag(__snax_tag)
+        }
+    )
+}
+
+fn emit_fragment(fragment: &SnaxFragment) -> TokenStream {
+    let child_insertions = emit_children(&fragment.children);
+
+    quote!(
+        {
+            let mut __snax_tag = ::snax::Fragment {
+                children: ::std::vec::Vec::new(),
+            };
+
+            #child_insertions
+
+            ::snax::HtmlContent::Fragment(__snax_tag)
         }
     )
 }

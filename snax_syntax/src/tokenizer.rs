@@ -11,6 +11,8 @@ pub enum HtmlToken {
     CloseTag(HtmlCloseToken),
     SelfClosingTag(HtmlSelfClosingToken),
     Textish(HtmlTextishToken),
+    OpenFragment,
+    CloseFragment,
 }
 
 #[derive(Debug)]
@@ -60,12 +62,22 @@ pub fn parse_html_token(mut input: impl Iterator<Item = TokenTree>) -> Result<Ht
         TokenTree::Punct(ref punct) if punct.as_char() == '<' => {
             match input.next().ok_or(TokenizeError::UnexpectedEnd)? {
                 TokenTree::Punct(ref punct) if punct.as_char() == '/' => {
-                    let name = expect_next!(input, TokenTree::Ident(ident) => ident);
-                    expect_next!(input, TokenTree::Punct(ref punct) if punct.as_char() == '>');
+                    match input.next().ok_or(TokenizeError::UnexpectedEnd)? {
+                        TokenTree::Punct(ref punct) if punct.as_char() == '>' => {
+                            Ok(HtmlToken::CloseFragment)
+                        },
+                        TokenTree::Ident(name) => {
+                            expect_next!(input, TokenTree::Punct(ref punct) if punct.as_char() == '>');
 
-                    Ok(HtmlToken::CloseTag(HtmlCloseToken {
-                        name,
-                    }))
+                            Ok(HtmlToken::CloseTag(HtmlCloseToken {
+                                name,
+                            }))
+                        },
+                        unexpected => return Err(TokenizeError::UnexpectedToken(unexpected)),
+                    }
+                },
+                TokenTree::Punct(ref punct) if punct.as_char() == '>' => {
+                    Ok(HtmlToken::OpenFragment)
                 },
                 TokenTree::Ident(name) => {
                     let mut attributes = Vec::new();
