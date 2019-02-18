@@ -27,12 +27,29 @@ fn render_page() -> HtmlContent {
     snax!(
         <html>
             <head>
+                /* Literal strings need to be quoted, unlike JSX */
                 <title>"Hello, Snax!"</title>
             </head>
             <body>
+                /* Snax supports fragment syntax, like JSX! */
+                <ul>
+                    { snax_features() }
+                </ul>
+
+                /* Fragments can also be pieced together via iterators! */
                 { Fragment::from((0..16).map(render_age)) }
             </body>
         </html>
+    )
+}
+
+fn snax_features() -> HtmlContent {
+    snax!(
+        <>
+            <li>Supports fragment syntax</li>
+            <li>Has an independent grammar</li>
+            <li>Provides a DOM implementation!</li>
+        </>
     )
 }
 

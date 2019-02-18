@@ -79,6 +79,21 @@ fn empty() {
 }
 
 #[test]
+fn empty_comment() {
+    let tag = snax!(
+        <div>
+            /* Hello, world! */
+        </div>
+    );
+
+    assert_eq!(tag, HtmlContent::Tag(HtmlTag {
+        name: Cow::Borrowed("div"),
+        attributes: HashMap::new(),
+        children: Vec::new(),
+    }));
+}
+
+#[test]
 fn self_closing() {
     let tag = snax!(<div />);
 
