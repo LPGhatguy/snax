@@ -14,7 +14,7 @@ repository = "https://github.com/LPGhatguy/snax.git"
 htmlescape = "0.3.1"
 proc-macro-hack = "0.5"
 proc-macro-nested = "0.1"
-snax_macros = { path = "../snax_macros" }
+snax_impl = { path = "../snax_impl" }
 
 [dev-dependencies]
 maplit = "1.0.1"

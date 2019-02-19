@@ -1,11 +1,11 @@
 [package]
-name = "snax_macros"
+name = "snax_impl"
 description = "Proc macro implementation for the `snax` crate"
 version = "0.1.0"
 authors = ["Lucien Greathouse <me@lpghatguy.com>"]
 edition = "2018"
 license = "MIT"
-documentation = "https://docs.rs/snax_macros"
+documentation = "https://docs.rs/snax_impl"
 homepage = "https://github.com/LPGhatguy/snax"
 repository = "https://github.com/LPGhatguy/snax.git"
 
