@@ -70,6 +70,22 @@ pub enum SnaxAttribute {
     },
 }
 
+impl PartialEq for SnaxAttribute {
+    fn eq(&self, other: &Self) -> bool {
+        use SnaxAttribute::*;
+
+        match (self, other) {
+            (
+                Simple { name, value },
+                Simple { name: other_name, value: other_value },
+            ) => {
+                name == other_name
+                && value.to_string() == other_value.to_string()
+            },
+        }
+    }
+}
+
 /// One complete block in the syntax.
 ///
 /// For more information, look at the documentation for the struct that each
@@ -89,12 +105,28 @@ pub enum SnaxItem {
     Content(TokenTree),
 }
 
+impl PartialEq for SnaxItem {
+    fn eq(&self, other: &Self) -> bool {
+        use SnaxItem::*;
+
+        match (self, other) {
+            (Tag(this), Tag(other)) => this == other,
+            (SelfClosingTag(this), SelfClosingTag(other)) => this == other,
+            (Fragment(this), Fragment(other)) => this == other,
+            (Content(this), Content(other)) => {
+                this.to_string() == other.to_string()
+            },
+            _ => false,
+        }
+    }
+}
+
 /// A standard tag, which can have attributes and children.
 ///
 /// ```html
 /// <div hello="world">"Hey!"</div>
 /// ```
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct SnaxTag {
     pub name: Ident,
     pub attributes: Vec<SnaxAttribute>,
@@ -110,7 +142,7 @@ pub struct SnaxTag {
 /// Note that snax_syntax does not support automatically closing unclosed
 /// tags like HTML does, such as `<br>`. These tags need to be written as
 /// `<br />` in order to simplify parsing.
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct SnaxSelfClosingTag {
     pub name: Ident,
     pub attributes: Vec<SnaxAttribute>,
@@ -127,7 +159,7 @@ pub struct SnaxSelfClosingTag {
 ///
 /// This syntax comes from JSX, and in frameworks like React, it's expected that
 /// the children of a fragment will be merged into the fragment's parent.
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct SnaxFragment {
     pub children: Vec<SnaxItem>,
 }

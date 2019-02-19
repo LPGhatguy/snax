@@ -1,7 +1,9 @@
+use proc_macro2::{Ident, Span};
 use quote::quote;
 
 use snax::{
     SnaxItem,
+    SnaxTag,
 };
 
 #[test]
@@ -9,12 +11,9 @@ fn empty_div() {
     let input = quote!(<div></div>);
     let output = snax::parse(input).unwrap();
 
-    let tag = match output {
-        SnaxItem::Tag(tag) => tag,
-        _ => panic!("Expected SnaxItem::Tag, got {:?}", output),
-    };
-
-    assert_eq!(tag.name.to_string(), "div");
-    assert_eq!(tag.attributes.len(), 0);
-    assert_eq!(tag.children.len(), 0);
+    assert_eq!(output, SnaxItem::Tag(SnaxTag {
+        name: Ident::new("div", Span::call_site()),
+        attributes: Default::default(),
+        children: Default::default(),
+    }));
 }

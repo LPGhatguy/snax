@@ -1,5 +1,9 @@
 # Snax Changelog
 
+## [Unreleased]
+- Fixed tokenizer types leaking into public interface
+- Implemented `PartialEq` for most types
+
 ## 0.2.0 (2019-02-18)
 - Shuffled around crate names to make more sense
 	- Syntax crate is now `snax`, in this repository
