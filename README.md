@@ -1,4 +1,6 @@
 # Snax
+![Travis-CI Build][travis-ci]
+
 Snax is [JSX][jsx-intro] for Rust.
 
 More specifically, it's a library for proc macro authors who want JSX-like
@@ -14,5 +16,6 @@ Snax requires Rust 1.32 or newer.
 Snax is available under the MIT license. See [LICENSE.txt](LICENSE.txt) for
 details.
 
+[travis-ci]: https://api.travis-ci.org/LPGhatguy/snax.svg?branch=master
 [jsx-intro]: https://reactjs.org/docs/introducing-jsx.html
 [ritz-github]: https://github.com/LPGhatguy/ritz
