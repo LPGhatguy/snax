@@ -135,14 +135,17 @@ pub struct SnaxFragment {
 
 #[derive(Debug)]
 pub enum ParseError {
-    Tokenize(TokenizeError),
+    UnexpectedEnd,
     UnexpectedItem(HtmlToken),
     UnexpectedToken(TokenTree),
 }
 
 impl From<TokenizeError> for ParseError {
     fn from(error: TokenizeError) -> ParseError {
-        ParseError::Tokenize(error)
+        match error {
+            TokenizeError::UnexpectedEnd => ParseError::UnexpectedEnd,
+            TokenizeError::UnexpectedToken(token) => ParseError::UnexpectedToken(token),
+        }
     }
 }
 
