@@ -4,6 +4,7 @@ extern crate proc_macro;
 
 use proc_macro_hack::proc_macro_hack;
 use proc_macro2::{
+    Literal,
     TokenStream,
     TokenTree,
 };
@@ -44,8 +45,10 @@ fn emit_attributes(attributes: &[SnaxAttribute]) -> TokenStream {
         .map(|attribute| {
             match attribute {
                 SnaxAttribute::Simple { name, value } => {
+                    let name_literal = Literal::string(&name.to_string());
+
                     quote!(
-                        __snax_tag.attributes.insert(stringify!(#name).into(), #value.into());
+                        __snax_tag.attributes.insert(#name_literal.into(), #value.into());
                     )
                 },
             }
@@ -68,12 +71,12 @@ fn emit_children(children: &[SnaxItem]) -> TokenStream {
 
 fn emit_self_closing_tag(tag: &SnaxSelfClosingTag) -> TokenStream {
     let attribute_insertions = emit_attributes(&tag.attributes);
-    let tag_name = &tag.name;
+    let tag_name_literal = Literal::string(&tag.name.to_string());
 
     quote!(
         {
             let mut __snax_tag = ::snax::HtmlSelfClosingTag {
-                name: ::std::borrow::Cow::Borrowed(stringify!(#tag_name)),
+                name: ::std::borrow::Cow::Borrowed(#tag_name_literal),
                 attributes: ::std::collections::HashMap::new(),
             };
 
@@ -87,12 +90,12 @@ fn emit_self_closing_tag(tag: &SnaxSelfClosingTag) -> TokenStream {
 fn emit_tag(tag: &SnaxTag) -> TokenStream {
     let attribute_insertions = emit_attributes(&tag.attributes);
     let child_insertions = emit_children(&tag.children);
-    let tag_name = &tag.name;
+    let tag_name_literal = Literal::string(&tag.name.to_string());
 
     quote!(
         {
             let mut __snax_tag = ::snax::HtmlTag {
-                name: ::std::borrow::Cow::Borrowed(stringify!(#tag_name)),
+                name: ::std::borrow::Cow::Borrowed(#tag_name_literal),
                 attributes: ::std::collections::HashMap::new(),
                 children: ::std::vec::Vec::new(),
             };
