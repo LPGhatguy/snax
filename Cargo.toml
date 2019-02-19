@@ -10,4 +10,7 @@ homepage = "https://github.com/LPGhatguy/snax"
 repository = "https://github.com/LPGhatguy/snax.git"
 
 [dependencies]
-proc-macro2 = "0.4"
+proc-macro2 = "0.4.27"
+
+[dev-dependencies]
+quote = "0.6.11"
