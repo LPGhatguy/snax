@@ -71,7 +71,7 @@ fn composing_via_function() {
 fn empty() {
     let tag = snax!(<div></div>);
 
-    assert_eq!(tag, HtmlContent::Tag(HtmlTag {
+    compare(tag, HtmlContent::Tag(HtmlTag {
         name: Cow::Borrowed("div"),
         attributes: HashMap::new(),
         children: Vec::new(),
@@ -86,7 +86,7 @@ fn empty_comment() {
         </div>
     );
 
-    assert_eq!(tag, HtmlContent::Tag(HtmlTag {
+    compare(tag, HtmlContent::Tag(HtmlTag {
         name: Cow::Borrowed("div"),
         attributes: HashMap::new(),
         children: Vec::new(),
@@ -97,7 +97,7 @@ fn empty_comment() {
 fn self_closing() {
     let tag = snax!(<div />);
 
-    assert_eq!(tag, HtmlContent::SelfClosingTag(HtmlSelfClosingTag {
+    compare(tag, HtmlContent::SelfClosingTag(HtmlSelfClosingTag {
         name: Cow::Borrowed("div"),
         attributes: HashMap::new(),
     }));
@@ -107,7 +107,7 @@ fn self_closing() {
 fn empty_fragment() {
     let fragment = snax!(<> </>);
 
-    assert_eq!(fragment, HtmlContent::Fragment(Fragment {
+    compare(fragment, HtmlContent::Fragment(Fragment {
         children: Vec::new(),
     }));
 }
@@ -116,7 +116,7 @@ fn empty_fragment() {
 fn empty_with_attributes() {
     let tag = snax!(<div foo="bar" baz="qux"></div>);
 
-    assert_eq!(tag, HtmlContent::Tag(HtmlTag {
+    compare(tag, HtmlContent::Tag(HtmlTag {
         name: Cow::Borrowed("div"),
         attributes: hashmap! {
             Cow::Borrowed("foo") => Cow::Borrowed("bar"),
@@ -130,7 +130,7 @@ fn empty_with_attributes() {
 fn empty_with_block_attribute() {
     let tag = snax!(<div foo={ (5 + 5).to_string() }></div>);
 
-    assert_eq!(tag, HtmlContent::Tag(HtmlTag {
+    compare(tag, HtmlContent::Tag(HtmlTag {
         name: Cow::Borrowed("div"),
         attributes: hashmap! {
             Cow::Borrowed("foo") => Cow::Borrowed("10"),
@@ -143,7 +143,7 @@ fn empty_with_block_attribute() {
 fn self_closing_with_attribute() {
     let tag = snax!(<div foo="hello" />);
 
-    assert_eq!(tag, HtmlContent::SelfClosingTag(HtmlSelfClosingTag {
+    compare(tag, HtmlContent::SelfClosingTag(HtmlSelfClosingTag {
         name: Cow::Borrowed("div"),
         attributes: hashmap! {
             Cow::Borrowed("foo") => Cow::Borrowed("hello"),
@@ -159,7 +159,7 @@ fn literal_string() {
         </span>
     );
 
-    assert_eq!(tag, HtmlContent::Tag(HtmlTag {
+    compare(tag, HtmlContent::Tag(HtmlTag {
         name: Cow::Borrowed("span"),
         attributes: HashMap::new(),
         children: vec![
@@ -176,7 +176,7 @@ fn literal_string_fragment() {
         </>
     );
 
-    assert_eq!(fragment, HtmlContent::Fragment(Fragment {
+    compare(fragment, HtmlContent::Fragment(Fragment {
         children: vec![
             "Hello!".into(),
         ],
@@ -192,7 +192,7 @@ fn literal_multiple_string_fragment() {
         </>
     );
 
-    assert_eq!(fragment, HtmlContent::Fragment(Fragment {
+    compare(fragment, HtmlContent::Fragment(Fragment {
         children: vec![
             "Hello, ".into(),
             "world!".into(),
@@ -208,7 +208,7 @@ fn literal_block() {
         </span>
     );
 
-    assert_eq!(tag, HtmlContent::Tag(HtmlTag {
+    compare(tag, HtmlContent::Tag(HtmlTag {
         name: Cow::Borrowed("span"),
         attributes: HashMap::new(),
         children: vec![
@@ -225,7 +225,7 @@ fn literal_block_fragment() {
         </span>
     );
 
-    assert_eq!(tag, HtmlContent::Tag(HtmlTag {
+    compare(tag, HtmlContent::Tag(HtmlTag {
         name: Cow::Borrowed("span"),
         attributes: HashMap::new(),
         children: vec![
@@ -249,7 +249,7 @@ fn literal_block_content_fragments() {
         </div>
     );
 
-    assert_eq!(tag, HtmlContent::Tag(HtmlTag {
+    compare(tag, HtmlContent::Tag(HtmlTag {
         name: Cow::Borrowed("div"),
         attributes: HashMap::new(),
         children: vec![
@@ -287,7 +287,7 @@ fn nested_tags() {
         </div>
     );
 
-    assert_eq!(tag, HtmlContent::Tag(HtmlTag {
+    compare(tag, HtmlContent::Tag(HtmlTag {
         name: Cow::Borrowed("div"),
         attributes: HashMap::new(),
         children: vec![
@@ -335,7 +335,7 @@ fn nested_tags_self_closing() {
         </div>
     );
 
-    assert_eq!(tag, HtmlContent::Tag(HtmlTag {
+    compare(tag, HtmlContent::Tag(HtmlTag {
         name: Cow::Borrowed("div"),
         attributes: HashMap::new(),
         children: vec![
