@@ -42,16 +42,14 @@ fn emit_item(item: &SnaxItem) -> TokenStream {
 fn emit_attributes(attributes: &[SnaxAttribute]) -> TokenStream {
     attributes
         .iter()
-        .map(|attribute| {
-            match attribute {
-                SnaxAttribute::Simple { name, value } => {
-                    let name_literal = Literal::string(&name.to_string());
+        .map(|attribute| match attribute {
+            SnaxAttribute::Simple { name, value } => {
+                let name_literal = Literal::string(&name.to_string());
 
-                    quote!(
-                        __snax_tag.set_attribute(#name_literal, #value);
-                    )
-                },
-            }
+                quote!(
+                    __snax_tag.set_attribute(#name_literal, #value);
+                )
+            },
         })
         .collect()
 }
@@ -75,18 +73,16 @@ fn emit_self_closing_tag(tag: &SnaxSelfClosingTag) -> TokenStream {
     let attributes_len_literal = Literal::usize_unsuffixed(tag.attributes.len());
     let tag_name_literal = Literal::string(&tag.name.to_string());
 
-    quote!(
-        {
-            let mut __snax_tag = ::snax::HtmlSelfClosingTag {
-                name: ::std::borrow::Cow::Borrowed(#tag_name_literal),
-                attributes: ::std::collections::HashMap::with_capacity(#attributes_len_literal),
-            };
+    quote!({
+        let mut __snax_tag = ::snax::HtmlSelfClosingTag {
+            name: ::std::borrow::Cow::Borrowed(#tag_name_literal),
+            attributes: ::std::collections::HashMap::with_capacity(#attributes_len_literal),
+        };
 
-            #attribute_insertions
+        #attribute_insertions
 
-            ::snax::HtmlContent::SelfClosingTag(__snax_tag)
-        }
-    )
+        ::snax::HtmlContent::SelfClosingTag(__snax_tag)
+    })
 }
 
 fn emit_tag(tag: &SnaxTag) -> TokenStream {
@@ -97,20 +93,18 @@ fn emit_tag(tag: &SnaxTag) -> TokenStream {
     let children_len_literal = Literal::usize_unsuffixed(tag.children.len());
     let tag_name_literal = Literal::string(&tag.name.to_string());
 
-    quote!(
-        {
-            let mut __snax_tag = ::snax::HtmlTag {
-                name: ::std::borrow::Cow::Borrowed(#tag_name_literal),
-                attributes: ::std::collections::HashMap::with_capacity(#attributes_len_literal),
-                children: ::std::vec::Vec::with_capacity(#children_len_literal),
-            };
+    quote!({
+        let mut __snax_tag = ::snax::HtmlTag {
+            name: ::std::borrow::Cow::Borrowed(#tag_name_literal),
+            attributes: ::std::collections::HashMap::with_capacity(#attributes_len_literal),
+            children: ::std::vec::Vec::with_capacity(#children_len_literal),
+        };
 
-            #attribute_insertions
-            #child_insertions
+        #attribute_insertions
+        #child_insertions
 
-            ::snax::HtmlContent::Tag(__snax_tag)
-        }
-    )
+        ::snax::HtmlContent::Tag(__snax_tag)
+    })
 }
 
 fn emit_fragment(fragment: &SnaxFragment) -> TokenStream {
@@ -118,17 +112,15 @@ fn emit_fragment(fragment: &SnaxFragment) -> TokenStream {
 
     let children_len_literal = Literal::usize_unsuffixed(fragment.children.len());
 
-    quote!(
-        {
-            let mut __snax_tag = ::snax::Fragment {
-                children: ::std::vec::Vec::with_capacity(#children_len_literal),
-            };
+    quote!({
+        let mut __snax_tag = ::snax::Fragment {
+            children: ::std::vec::Vec::with_capacity(#children_len_literal),
+        };
 
-            #child_insertions
+        #child_insertions
 
-            ::snax::HtmlContent::Fragment(__snax_tag)
-        }
-    )
+        ::snax::HtmlContent::Fragment(__snax_tag)
+    })
 }
 
 fn emit_content(tt: &TokenTree) -> TokenStream {
