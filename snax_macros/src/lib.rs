@@ -71,13 +71,15 @@ fn emit_children(children: &[SnaxItem]) -> TokenStream {
 
 fn emit_self_closing_tag(tag: &SnaxSelfClosingTag) -> TokenStream {
     let attribute_insertions = emit_attributes(&tag.attributes);
+
+    let attributes_len_literal = Literal::usize_unsuffixed(tag.attributes.len());
     let tag_name_literal = Literal::string(&tag.name.to_string());
 
     quote!(
         {
             let mut __snax_tag = ::snax::HtmlSelfClosingTag {
                 name: ::std::borrow::Cow::Borrowed(#tag_name_literal),
-                attributes: ::std::collections::HashMap::new(),
+                attributes: ::std::collections::HashMap::with_capacity(#attributes_len_literal),
             };
 
             #attribute_insertions
@@ -90,14 +92,17 @@ fn emit_self_closing_tag(tag: &SnaxSelfClosingTag) -> TokenStream {
 fn emit_tag(tag: &SnaxTag) -> TokenStream {
     let attribute_insertions = emit_attributes(&tag.attributes);
     let child_insertions = emit_children(&tag.children);
+
+    let attributes_len_literal = Literal::usize_unsuffixed(tag.attributes.len());
+    let children_len_literal = Literal::usize_unsuffixed(tag.children.len());
     let tag_name_literal = Literal::string(&tag.name.to_string());
 
     quote!(
         {
             let mut __snax_tag = ::snax::HtmlTag {
                 name: ::std::borrow::Cow::Borrowed(#tag_name_literal),
-                attributes: ::std::collections::HashMap::new(),
-                children: ::std::vec::Vec::new(),
+                attributes: ::std::collections::HashMap::with_capacity(#attributes_len_literal),
+                children: ::std::vec::Vec::with_capacity(#children_len_literal),
             };
 
             #attribute_insertions
@@ -111,10 +116,12 @@ fn emit_tag(tag: &SnaxTag) -> TokenStream {
 fn emit_fragment(fragment: &SnaxFragment) -> TokenStream {
     let child_insertions = emit_children(&fragment.children);
 
+    let children_len_literal = Literal::usize_unsuffixed(fragment.children.len());
+
     quote!(
         {
             let mut __snax_tag = ::snax::Fragment {
-                children: ::std::vec::Vec::new(),
+                children: ::std::vec::Vec::with_capacity(#children_len_literal),
             };
 
             #child_insertions
