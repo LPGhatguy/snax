@@ -48,7 +48,7 @@ fn emit_attributes(attributes: &[SnaxAttribute]) -> TokenStream {
                     let name_literal = Literal::string(&name.to_string());
 
                     quote!(
-                        __snax_tag.attributes.insert(#name_literal.into(), #value.into());
+                        __snax_tag.set_attribute(#name_literal, #value);
                     )
                 },
             }

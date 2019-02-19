@@ -18,6 +18,10 @@ impl<'a> HtmlTag<'a> {
             self.children.push(item);
         }
     }
+
+    pub fn set_attribute<K: Into<Cow<'a, str>>, V: Into<Cow<'a, str>>>(&mut self, key: K, value: V) {
+        self.attributes.insert(key.into(), value.into());
+    }
 }
 
 impl<'a> fmt::Display for HtmlTag<'a> {
@@ -42,6 +46,12 @@ impl<'a> fmt::Display for HtmlTag<'a> {
 pub struct HtmlSelfClosingTag<'a> {
     pub name: Cow<'a, str>,
     pub attributes: HashMap<Cow<'a, str>, Cow<'a, str>>,
+}
+
+impl <'a> HtmlSelfClosingTag<'a> {
+    pub fn set_attribute<K: Into<Cow<'a, str>>, V: Into<Cow<'a, str>>>(&mut self, key: K, value: V) {
+        self.attributes.insert(key.into(), value.into());
+    }
 }
 
 impl<'a> fmt::Display for HtmlSelfClosingTag<'a> {
