@@ -1,12 +1,16 @@
 # Snax: JSX-like for Rust
-Templates should just be Rust code. This is the philosophy behind JSX and React and I think it's great.
+<!-- To regenerate this README, use `cargo readme -r snax > README.md` -->
 
-Snax is an implementation of a JSX-like grammar for Rust. You can use it as part of the `snax` crate, which provides a complete DOM that's quick to turn into a string.
+Snax is an implementation of a JSX-like grammar for Rust. You can use it as
+part of the `snax` crate, which provides a complete, untyped DOM that's
+quick to turn into a string.
 
-If you're a proc macro author, you can also consume the `snax_syntax` to produce whatever structures you need for your project. This can be used to support a typed DOM or any React-like framework!
+If you're a proc macro author, you can also consume the `snax_syntax` to
+produce whatever structures you need for your project. This can be used to
+support a typed DOM or any React-like framework!
 
-## Installation
-Snax requires Rust 1.32 or newer and works on stable.
+### Installation
+Snax requires Rust 1.32 or newer.
 
 It isn't published to crates.io yet, but you can use a Git dependency:
 
@@ -14,11 +18,12 @@ It isn't published to crates.io yet, but you can use a Git dependency:
 snax = { git = "https://github.com/LPGhatguy/snax.git" }
 ```
 
-Some things are still a bit in flux, so I'm sorry in advance if I break anything!
+Some things are still a bit in flux, so I'm sorry in advance if I break
+anything!
 
-## Examples
+### Examples
 
-### Simple Page
+#### Simple Page
 ```rust
 use snax::snax;
 
@@ -54,5 +59,6 @@ fn main() {
 }
 ```
 
-## License
-Snax is available under the MIT license. See [LICENSE.txt](LICENSE.txt) for details.
+### License
+Snax is available under the MIT license. See [LICENSE.txt](LICENSE.txt) for
+details.

@@ -1,8 +1,14 @@
 [package]
 name = "snax"
+description = "JSX-alike for Rust paired with an untyped DOM implementation"
 version = "0.1.0"
 authors = ["Lucien Greathouse <me@lpghatguy.com>"]
 edition = "2018"
+readme = "../README.md"
+license = "MIT"
+documentation = "https://docs.rs/snax"
+homepage = "https://github.com/LPGhatguy/snax"
+repository = "https://github.com/LPGhatguy/snax.git"
 
 [dependencies]
 htmlescape = "0.3.1"
