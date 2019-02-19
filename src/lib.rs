@@ -85,8 +85,7 @@ pub enum SnaxItem {
     /// A fragment, containing a list of zero or more children.
     Fragment(SnaxFragment),
 
-    /// A block of content, which can be a literal or a group that evaluates to
-    /// an `Into<SnaxItem>` at runtime.
+    /// A block of content, which can contain any Rust expression.
     Content(TokenTree),
 }
 
