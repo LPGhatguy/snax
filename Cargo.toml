@@ -1,6 +1,13 @@
-[workspace]
-members = [
-	"snax",
-	"snax_syntax",
-	"snax_impl",
-]
+[package]
+name = "snax"
+description = "JSX-like syntax for proc macro authors"
+version = "0.2.0"
+authors = ["Lucien Greathouse <me@lpghatguy.com>"]
+edition = "2018"
+license = "MIT"
+documentation = "https://docs.rs/snax"
+homepage = "https://github.com/LPGhatguy/snax"
+repository = "https://github.com/LPGhatguy/snax.git"
+
+[dependencies]
+proc-macro2 = "0.4"
