@@ -235,6 +235,46 @@ fn literal_block_fragment() {
     }));
 }
 
+// https://github.com/LPGhatguy/snax/issues/7
+//
+// #[test]
+// fn literal_block_iterator() {
+//     let tag = snax!(
+//         <span>
+//             { ["hello", "world"].iter() }
+//         </span>
+//     );
+
+//     compare(tag, HtmlContent::Tag(HtmlTag {
+//         name: Cow::Borrowed("span"),
+//         attributes: HashMap::new(),
+//         children: vec![
+//             "hello".into(),
+//             "world".into(),
+//         ],
+//     }));
+// }
+
+// https://github.com/LPGhatguy/snax/issues/7
+//
+// #[test]
+// fn literal_block_into_iterator() {
+//     let tag = snax!(
+//         <span>
+//             { ["hello", "world"] }
+//         </span>
+//     );
+
+//     compare(tag, HtmlContent::Tag(HtmlTag {
+//         name: Cow::Borrowed("span"),
+//         attributes: HashMap::new(),
+//         children: vec![
+//             "hello".into(),
+//             "world".into(),
+//         ],
+//     }));
+// }
+
 #[test]
 fn literal_block_content_fragments() {
     fn render_age(age: &u32) -> HtmlContent {
