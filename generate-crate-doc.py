@@ -1,23 +1,35 @@
-# Generates snax/src/lib.rs based on README.md
+# Generates crate-level documentation for each crate from their README.md files.
 
 import re
 
-with open("README.md", "r") as file:
-	# Read the first line into oblivion, which contains the README title
-	file.readline()
-	readmeContents = file.read()
+projects = [
+	("README.md", "snax/src/lib.rs"),
+	("snax_impl/README.md", "snax_impl/src/lib.rs"),
+	("snax_syntax/README.md", "snax_syntax/src/lib.rs"),
+]
 
-with open("snax/src/lib.rs", "r") as file:
-	libContents = file.read()
+for readmePath, libPath in projects:
+	with open(readmePath, "r") as file:
+		# Read the first line into oblivion, which contains the title
+		file.readline()
+		readmeContents = file.read()
 
-existingDocPattern = re.compile("(//![^\n]*\n)+", re.MULTILINE)
-linePattern = re.compile("(.*)")
+	with open(libPath, "r") as file:
+		libContents = file.read()
 
-existingDocMatch = existingDocPattern.match(libContents)
-libBody = libContents[existingDocMatch.end():]
-docComment = linePattern.sub("//! \\1", readmeContents) + "\n"
+	existingDocPattern = re.compile("^(//![^\n]*\n)+", re.MULTILINE)
 
-newLibContents = docComment + libBody
+	existingDocMatch = existingDocPattern.match(libContents)
+	code = libContents[existingDocMatch.end():]
 
-with open("snax/src/lib.rs", "w") as file:
-	file.write(newLibContents)
+	docLines = []
+	for line in readmeContents.splitlines():
+		newLine = ("//! " + line).strip()
+		docLines.append(newLine)
+
+	docComment = "\n".join(docLines) + "\n"
+
+	newLibContents = docComment + code
+
+	with open(libPath, "w") as file:
+		file.write(newLibContents)
