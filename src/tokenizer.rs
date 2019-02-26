@@ -1,6 +1,7 @@
 use proc_macro2::{
     TokenTree,
     Ident,
+    Span,
 };
 
 use crate::SnaxAttribute;
@@ -15,15 +16,43 @@ pub enum HtmlToken {
     CloseFragment,
 }
 
+impl HtmlToken {
+    pub fn what(&self) -> String {
+        match self {
+            HtmlToken::OpenTag(token) => format!("opening tag '{}'", token.name),
+            HtmlToken::CloseTag(token) => format!("closing tag '{}'", token.name),
+            HtmlToken::SelfClosingTag(token) => format!("self-closing tag '{}'", token.name),
+            HtmlToken::Textish(token) => format!("content"),
+            HtmlToken::OpenFragment => format!("opening fragment"),
+            HtmlToken::CloseFragment => format!("closing fragment"),
+        }
+    }
+
+    pub fn spans(&self) -> (Span, Span) {
+        match self {
+            HtmlToken::OpenTag(token) => (token.start.clone(), token.end.clone()),
+            HtmlToken::CloseTag(token) => (token.start.clone(), token.end.clone()),
+            HtmlToken::SelfClosingTag(token) => (token.name.span(), token.name.span()),
+            HtmlToken::Textish(token) => (token.content.span(), token.content.span()),
+            HtmlToken::OpenFragment => (Span::call_site(), Span::call_site()),
+            HtmlToken::CloseFragment => (Span::call_site(), Span::call_site()),
+        }
+    }
+}
+
 #[derive(Debug)]
 pub struct HtmlOpenToken {
     pub name: Ident,
     pub attributes: Vec<SnaxAttribute>,
+    pub start: Span,
+    pub end: Span,
 }
 
 #[derive(Debug, Clone)]
 pub struct HtmlCloseToken {
     pub name: Ident,
+    pub start: Span,
+    pub end: Span,
 }
 
 #[derive(Debug)]
@@ -59,18 +88,20 @@ macro_rules! expect_next {
 
 pub fn parse_html_token(mut input: impl Iterator<Item = TokenTree>) -> Result<HtmlToken, TokenizeError> {
     match input.next().ok_or(TokenizeError::UnexpectedEnd)? {
-        TokenTree::Punct(ref punct) if punct.as_char() == '<' => {
+        TokenTree::Punct(ref start_punct) if start_punct.as_char() == '<' => {
             match input.next().ok_or(TokenizeError::UnexpectedEnd)? {
-                TokenTree::Punct(ref punct) if punct.as_char() == '/' => {
+                TokenTree::Punct(ref slash_punct) if slash_punct.as_char() == '/' => {
                     match input.next().ok_or(TokenizeError::UnexpectedEnd)? {
                         TokenTree::Punct(ref punct) if punct.as_char() == '>' => {
                             Ok(HtmlToken::CloseFragment)
                         },
                         TokenTree::Ident(name) => {
-                            expect_next!(input, TokenTree::Punct(ref punct) if punct.as_char() == '>');
+                            let end_punct = expect_next!(input, TokenTree::Punct(ref punct) if punct.as_char() == '>' => punct.clone());
 
                             Ok(HtmlToken::CloseTag(HtmlCloseToken {
                                 name,
+                                start: start_punct.span(),
+                                end: end_punct.span(),
                             }))
                         },
                         unexpected => return Err(TokenizeError::UnexpectedToken(unexpected)),
@@ -97,12 +128,14 @@ pub fn parse_html_token(mut input: impl Iterator<Item = TokenTree>) -> Result<Ht
                                     unexpected => return Err(TokenizeError::UnexpectedToken(unexpected)),
                                 }
                             },
-                            TokenTree::Punct(ref punct) if punct.as_char() == '>' => {
+                            TokenTree::Punct(ref end_punct) if end_punct.as_char() == '>' => {
                                 // Opening tag
 
                                 return Ok(HtmlToken::OpenTag(HtmlOpenToken {
                                     name,
                                     attributes,
+                                    start: start_punct.span(),
+                                    end: end_punct.span(),
                                 }));
                             },
                             TokenTree::Punct(ref punct) if punct.as_char() == '/' => {

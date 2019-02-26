@@ -18,10 +18,18 @@
 
 mod tokenizer;
 
+use std::iter::FromIterator;
+
 use proc_macro2::{
+    Delimiter,
+    Group,
+    Ident,
+    Literal,
+    Punct,
+    Spacing,
+    Span,
     TokenStream,
     TokenTree,
-    Ident,
 };
 
 use crate::tokenizer::{
@@ -167,8 +175,47 @@ pub struct SnaxFragment {
 #[derive(Debug)]
 pub enum ParseError {
     UnexpectedEnd,
-    UnexpectedItem(HtmlToken),
+    UnexpectedItem {
+        token: HtmlToken,
+        expected: String,
+    },
     UnexpectedToken(TokenTree),
+}
+
+impl ParseError {
+    pub fn to_compile_error(&self) -> TokenStream {
+        let message = match self {
+            ParseError::UnexpectedEnd => String::from("Unexpected end of macro"),
+            ParseError::UnexpectedItem { token, expected } => format!("Unexpected {}, expected {}", token.what(), expected),
+            ParseError::UnexpectedToken(_) => String::from("Unexpected Rust token"),
+        };
+
+        let (start, end) = match self {
+            ParseError::UnexpectedEnd => (Span::call_site(), Span::call_site()),
+            ParseError::UnexpectedItem { token, .. } => token.spans(),
+            ParseError::UnexpectedToken(token) => (token.span(), token.span()),
+        };
+
+        TokenStream::from_iter(vec![
+            TokenTree::Ident(Ident::new("compile_error", start)),
+            TokenTree::Punct({
+                let mut punct = Punct::new('!', Spacing::Alone);
+                punct.set_span(start);
+                punct
+            }),
+            TokenTree::Group({
+                let mut group = Group::new(Delimiter::Brace, {
+                    TokenStream::from_iter(vec![TokenTree::Literal({
+                        let mut string = Literal::string(&message);
+                        string.set_span(end);
+                        string
+                    })])
+                });
+                group.set_span(end);
+                group
+            }),
+        ])
+    }
 }
 
 impl From<TokenizeError> for ParseError {
@@ -207,14 +254,25 @@ pub fn parse(input_stream: TokenStream) -> Result<SnaxItem, ParseError> {
             },
             HtmlToken::CloseTag(closing_tag) => {
                 let (open_token, children) = tag_stack.pop()
-                    .ok_or_else(|| ParseError::UnexpectedItem(HtmlToken::CloseTag(closing_tag.clone())))?;
+                    .ok_or_else(|| ParseError::UnexpectedItem {
+                        token: HtmlToken::CloseTag(closing_tag.clone()),
+                        expected: String::from("anything else")
+                    })?;
 
                 let opening_tag = match open_token {
                     OpenToken::Tag(tag) => tag,
-                    OpenToken::Fragment => return Err(ParseError::UnexpectedItem(HtmlToken::CloseTag(closing_tag.clone()))),
+                    OpenToken::Fragment => return Err(ParseError::UnexpectedItem {
+                        token: HtmlToken::CloseTag(closing_tag.clone()),
+                        expected: String::from("something")
+                    }),
                 };
 
-                assert_eq!(opening_tag.name, closing_tag.name);
+                if opening_tag.name != closing_tag.name {
+                    return Err(ParseError::UnexpectedItem {
+                        token: HtmlToken::CloseTag(closing_tag),
+                        expected: format!("closing tag for '{}'", opening_tag.name)
+                    });
+                }
 
                 let tag = SnaxTag {
                     name: opening_tag.name,
@@ -237,11 +295,17 @@ pub fn parse(input_stream: TokenStream) -> Result<SnaxItem, ParseError> {
             },
             HtmlToken::CloseFragment => {
                 let (open_token, children) = tag_stack.pop()
-                    .ok_or_else(|| ParseError::UnexpectedItem(HtmlToken::CloseFragment))?;
+                    .ok_or_else(|| ParseError::UnexpectedItem {
+                        token: HtmlToken::CloseFragment,
+                        expected: String::from("anything else")
+                    })?;
 
                 match open_token {
                     OpenToken::Fragment => {},
-                    OpenToken::Tag(_) => return Err(ParseError::UnexpectedItem(HtmlToken::CloseFragment)),
+                    OpenToken::Tag(tag) => return Err(ParseError::UnexpectedItem {
+                        token: HtmlToken::CloseFragment,
+                        expected: String::from("closing fragment")
+                    }),
                 }
 
                 let fragment = SnaxFragment {
