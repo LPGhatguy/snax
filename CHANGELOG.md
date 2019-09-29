@@ -1,6 +1,9 @@
 # Snax Changelog
 
 ## [Unreleased]
+
+## 0.3.0 (2019-09-29)
+- Updated to `proc-macro2` and `quote` 1.0 ([#8](https://github.com/LPGhatguy/snax/pull/8))
 - Fixed tokenizer types leaking into public interface
 - Implemented `PartialEq` for most types
 
